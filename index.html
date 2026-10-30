@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0d0f14">
+<title>Cifrador</title>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' blob: data:; worker-src 'self' blob:; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="stylesheet" href="tailwind.css">
+<style id="appCss">
+  html { -webkit-text-size-adjust: 100%; }
+  body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  .btn { min-height: 44px; min-width: 44px; padding: 0 12px; border-radius: 12px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; gap: 6px; background: #e4e7ee; color: #12151c; user-select: none; -webkit-tap-highlight-color: transparent; }
+  .btn:active { transform: scale(.97); }
+  .btn:disabled { opacity: .35; pointer-events: none; }
+  .dark .btn { background: #1c2130; color: #eef1f7; }
+  .btn-p { background: #4338ca !important; color: #fff !important; }
+  .btn-on { outline: 2px solid #4338ca; }
+  .fld { width: 100%; min-height: 48px; padding: 10px 14px; border-radius: 12px; border: 1px solid #c7ccd8; background: #fff; color: #12151c; }
+  .dark .fld { background: #141824; border-color: #2a3147; color: #eef1f7; }
+  .fld:focus-visible, .btn:focus-visible { outline: 2px solid #6366f1; outline-offset: 2px; }
+  :root { --lyrics-color: #111827; --chord-color: #0878c9; }
+  #song { color: var(--lyrics-color); white-space: pre-wrap; overflow-wrap: anywhere; max-width: 100%; overflow-x: hidden; font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; line-height: 1.55; }
+  #song.two-columns { column-count: 2; column-gap: 2rem; column-rule: 1px solid #dbe2ee; }
+  .dark #song.two-columns { column-rule-color: #30394b; }
+  @media (max-width: 640px) { #song { font-size: clamp(14px, 3.8vw, 18px); padding-left: 12px; padding-right: 12px; } #song.two-columns { column-gap: 1rem; } }
+  .chord { font-weight: 700; color: var(--chord-color); }
+  .brand { color: #12599a; }
+  .dark .brand { color: #67c7ff; }
+  .editor-wrap { position: relative; }
+  #mText { position: relative; z-index: 1; background: transparent; color: transparent; -webkit-text-fill-color: transparent; caret-color: var(--lyrics-color); resize: vertical; line-height: 1.5; tab-size: 4; }
+  #mText::selection { background: rgba(99,102,241,.28); -webkit-text-fill-color: transparent; }
+  #mText::placeholder { color: #64748b; -webkit-text-fill-color: #64748b; opacity: 1; }
+  #mHighlight { position: absolute; z-index: 0; inset: 0; box-sizing: border-box; margin: 0; padding: 10px 14px; border: 1px solid transparent; pointer-events: none; overflow: hidden; white-space: pre-wrap; overflow-wrap: anywhere; font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: .875rem; line-height: 1.5; color: var(--lyrics-color); }
+  #mHighlight .editor-chord-line { color: var(--chord-color); font-weight: 700; }
+  /* Transição suave para ocultar o cabeçalho */
+  #viewerHeader { transition: transform 0.3s ease, opacity 0.3s ease; }
+  .logo { height: 40px; width: auto; }
+  .dark .logo { filter: brightness(1.3); }
+  html { overflow-x: hidden; } body { overflow-x: clip; } #viewer { overflow-x: hidden; } /* "clip" não cria rolagem própria, então o topo da lista consegue ficar fixo */
+  .tg { font-size: 10px; font-weight: 400; opacity: .75; border: 1px solid currentColor; border-radius: 9px; padding: 0 6px; margin-left: 6px; vertical-align: middle; }
+  #viewer { touch-action: pan-y; }
+  .header-hidden #viewerHeader { transform: none !important; opacity: 1 !important; pointer-events: auto !important; position: sticky !important; }
+  .header-hidden #vRows { display: none; }
+  #colorPop { position: fixed; right: 12px; top: 96px; z-index: 45; padding: 10px 12px; border-radius: 14px; background: #fff; border: 1px solid #c7ccd8; box-shadow: 0 10px 25px rgba(0,0,0,.25); flex-direction: column; align-items: flex-start; }
+  .dark #colorPop { background: #141824; border-color: #2a3147; }
+  #colorPop:not(.hidden) { display: flex; }
+  /* barra do visualizador: botões do mesmo tamanho, em grade */
+  #viewerHeader > div { max-width: 560px; margin-left: auto; margin-right: auto; }
+  .vrow { display: grid; gap: 6px; align-items: stretch; }
+  .vrow .btn { min-height: 42px; min-width: 0; height: 42px; padding: 0 4px; font-size: 13px; border-radius: 12px; }
+  .vr1 { grid-template-columns: 42px 1fr 42px 42px 42px 42px; align-items: center; }
+  #ctlTr { display: contents; } #ctlTr.hidden { display: none; }
+  #trReset { flex-direction: column; gap: 0; line-height: 1.1; }
+  #colorPop { gap: 8px; font-size: .8rem; }
+  #colorPop.hidden { display: none !important; }
+  #colorPop input[type=color] { width: 38px; height: 34px; padding: 2px; border: 1px solid #c7ccd8; border-radius: 8px; background: transparent; }
+  #colorPop label { display: flex; align-items: center; } #colorPop label { width: 100%; justify-content: space-between; gap: 14px; }
+  .drag { touch-action: none; cursor: grab; } li.dragging, .dRep.dragging { opacity: .6; outline: 2px solid #4338ca; border-radius: 12px; } .dRep { touch-action: pan-y; } .dRep .repDrag { cursor: grab; touch-action: none; min-width: 32px; }
+  .hidden { display: none !important; }
+  .btn { min-height: 44px; border-radius: 12px; font-weight: 600; padding-left: 14px; padding-right: 14px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+  #listActions { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  #listActions .btn, .mtools .btn { width: 100%; min-height: 46px; background: rgba(67,56,202,.08); border: 1px solid rgba(67,56,202,.35); }
+  #listActions .btn-p { background: #4338ca; color: #fff; border-color: #4338ca; }
+  #listActions #lstSave { grid-column: 1 / -1; }
+  #lstDel { color: #dc2626; border-color: rgba(220,38,38,.45) !important; }
+  .mtools .btn { font-size: 12.5px; padding-left: 6px; padding-right: 6px; white-space: nowrap; }
+  .hl { background: #fde047; color: #111; border-radius: 3px; padding: 0 1px; } #song b { font-weight: 800; } #song i { font-style: italic; }
+  #mFmt { display: flex; gap: 6px; } #mFmt .btn { flex: 1; min-height: 42px; }
+  /* menu lateral */
+  .drawer { position: fixed; top: 0; bottom: 0; left: 0; width: min(88vw, 320px); z-index: 56; overflow-y: auto; background: #fff; border-right: 1px solid #e2e8f0; box-shadow: 0 10px 30px rgba(0,0,0,.35); transform: translateX(-102%); visibility: hidden; transition: transform .2s ease, visibility 0s linear .2s; padding: 12px; padding-top: max(12px, env(safe-area-inset-top)); }
+  .dark .drawer { background: #141824; border-color: #2a3147; }
+  .drawer.open, body.dock-open .drawer { transform: none; visibility: visible; transition-delay: 0s; }
+  .dRep { display:flex; align-items:stretch; gap:4px; } .dRep .dName { min-width:0; flex:1; } .repDrag { touch-action:none; cursor:grab; } .dRep.dragging, .rowli.dragging { opacity:.55; outline:2px dashed #6366f1; }
+  .dItem { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 44px; padding: 0 12px; border-radius: 12px; font-weight: 600; text-align: left; }
+  .dItem:hover, .dName:hover { background: rgba(67,56,202,.10); }
+  .dRep { position: relative; display: flex; align-items: center; gap: 2px; border-radius: 12px; } .dRep.on { background: rgba(67,56,202,.14); } .dMore { flex: none; width: 36px; height: 36px; border-radius: 10px; font-size: 22px; } .dMore:hover { background: rgba(67,56,202,.15); }
+  .dName { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: 6px; min-height: 42px; padding: 0 10px; border-radius: 12px; text-align: left; } .dName small { opacity: .6; }
+  .dIco { width: 34px; height: 36px; border-radius: 10px; font-size: 15px; flex: none; } .dIco:hover { background: rgba(67,56,202,.15); }
+  details.dSec > summary { list-style: none; cursor: pointer; } details.dSec > summary::-webkit-details-marker { display: none; }
+  @media (min-width: 1024px) { body.dock-open .drawer { z-index: 56; } #drawerBg { display: none !important; } }
+  /* ações de cada cifra: menu de três pontos em todas as telas */
+  .rowli { position: relative; }
+  .rowmore { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 44px; min-width: 44px; padding-left: 0; padding-right: 0; font-size: 1.35rem; }
+  .rowacts { display: none; position: absolute; right: 0; top: calc(100% + 4px); z-index: 30; padding: 6px; gap: 6px; flex-wrap: wrap; max-width: min(320px, calc(100vw - 32px)); border-radius: 14px; background: #fff; border: 1px solid #c7ccd8; box-shadow: 0 10px 25px rgba(0,0,0,.25); }
+  .dark .rowacts { background: #141824; border-color: #2a3147; }
+  .rowli.open .rowacts { display: flex; }
+  .rowacts .btn { min-width: 40px; min-height: 40px; }
+  
+  /* janelinhas da barra de leitura */
+  .hpop { position: fixed; z-index: 45; display: flex; gap: 8px; padding: 8px; border-radius: 14px; background: #fff; border: 1px solid #c7ccd8; box-shadow: 0 10px 25px rgba(0,0,0,.25); }
+  .dark .hpop { background: #141824; border-color: #2a3147; }
+  .hpop .btn { min-width: 56px; height: 46px; font-size: 22px; }
+  .hpopg { display: grid; grid-template-columns: repeat(4, 64px); gap: 8px; }
+  .hpopg .btn { flex-direction: column; height: 62px; min-width: 0; font-size: 20px; gap: 2px; padding: 0; }
+  .hpopg .btn::after { content: attr(data-l); font-size: 10px; font-weight: 600; opacity: .75; line-height: 1; white-space: nowrap; }
+  .pbtn { flex-direction: column; gap: 2px; line-height: 1.05; min-width: 54px; min-height: 48px; } .pbtn .plbl { font-size: 11px; opacity: .8; font-weight: 600; } .pbtn b { font-size: 17px; }
+  @media (max-width: 640px) { #vRows .vr3 { display:flex !important; flex-wrap:nowrap; justify-content:stretch !important; align-items:stretch; gap:4px !important; } #vRows .vr3 > button, #ctlTr > button { flex:1 1 0; min-width:0; min-height:52px; font-size:12px; padding:0 2px; } #vRows .vr3 #fBtn { flex:1.15 1 0; } #vRows .vr3 #vOpts { flex:1.3 1 0; } #vRows .vr3 #scrollPlay { flex:.8 1 0; font-size:16px; } .dRep .repDrag, #list .drag { min-width:44px; min-height:48px; font-size:19px; touch-action:none; } }
+  @media (max-width: 360px) { #vRows .vr3 > button, #ctlTr > button { font-size:11px; } .pbtn .plbl { font-size:10px; } .pbtn b { font-size:15px; } }
+  @media (max-width: 340px) { #vRows .vr3 > button, #ctlTr > button { font-size:10px; } .pbtn .plbl { font-size:9px; } #vRows .vr3 #vOpts { gap:3px; } }
+  .vr3 { grid-template-columns: repeat(6, minmax(0, 1fr)) minmax(0, 1.7fr) !important; }
+  .vrow .btn { font-size: 12px; white-space: nowrap; padding-left: 2px; padding-right: 2px; }
+  .chev { margin-left: auto; transition: transform .2s; } details.dSec:not([open]) .chev { transform: rotate(-90deg); }
+  .dActs { display: none; position: absolute; right: 4px; top: 40px; z-index: 35; justify-content: space-around; gap: 2px; padding: 5px; border-radius: 12px; background: #fff; border: 1px solid #c7ccd8; box-shadow: 0 8px 20px rgba(0,0,0,.22); } .dark .dActs { background: #141824; border-color: #2a3147; } .dRep.menu-open .dActs { display: flex; }
+  #toTop, #vTop { position: fixed; right: 16px; bottom: 24px; z-index: 30; width: 48px; min-width: 48px; height: 48px; padding: 0; border-radius: 50%; box-shadow: 0 8px 20px rgba(0,0,0,.3); font-size: 20px; }
+  #vTop { bottom: 100px; z-index: 25; }
+  .mtools{display:grid!important;grid-template-columns:repeat(8,minmax(0,1fr));flex-wrap:nowrap;align-items:center;gap:4px;width:100%;overflow:visible}
+  .edit-icon-btn{width:100%;height:42px;min-width:0!important;padding:0!important;display:inline-flex;align-items:center;justify-content:center;font-size:1.05rem;flex:initial;border-radius:10px}
+  @media (max-width: 380px) { .mtools{gap:2px} .edit-icon-btn{height:38px;font-size:.95rem;border-radius:8px} }
+
+  /* --- utilitários que faltavam no tailwind.css (ajuste) --- */
+  .\!min-h-\[34px\]{min-height:34px!important}.\!px-2{padding-left:.5rem!important;padding-right:.5rem!important}.\!text-sm{font-size:.875rem!important;line-height:1.25rem!important}
+  .bg-black\/50{background-color:rgb(0 0 0/.5)}.bg-black\/65{background-color:rgb(0 0 0/.65)}
+  .bg-indigo-600{background-color:#4f46e5}.bg-red-50{background-color:#fef2f2}.bg-red-100{background-color:#fee2e2}
+  .border-current{border-color:currentColor}.border-indigo-700{border-color:#4338ca}.border-red-200{border-color:#fecaca}.border-red-300{border-color:#fca5a5}.border-slate-500\/30{border-color:rgb(100 116 139/.3)}
+  .border-l-2{border-left-width:2px}.break-words{overflow-wrap:break-word}.cursor-pointer{cursor:pointer}.gap-3{gap:.75rem}.h-10{height:2.5rem}.w-10{width:2.5rem}
+  .hover\:bg-black\/10:hover{background-color:rgb(0 0 0/.1)}.hover\:bg-red-100:hover{background-color:#fee2e2}
+  .items-start{align-items:flex-start}.leading-relaxed{line-height:1.625}.max-h-\[88vh\]{max-height:88vh}.min-w-12{min-width:3rem}.mt-1{margin-top:.25rem}
+  .overflow-hidden{overflow:hidden}.p-3{padding:.75rem}.pl-10{padding-left:2.5rem}.rounded-full{border-radius:9999px}.rounded-lg{border-radius:.5rem}
+  .shadow-2xl{box-shadow:0 25px 50px -12px rgb(0 0 0/.25)}.shadow-md{box-shadow:0 4px 6px -1px rgb(0 0 0/.1),0 2px 4px -2px rgb(0 0 0/.1)}
+  .space-y-1>:not([hidden])~:not([hidden]){margin-top:.25rem}
+  .text-red-700{color:#b91c1c}.text-red-800{color:#991b1b}.text-red-900{color:#7f1d1d}.text-right{text-align:right}.text-xl{font-size:1.25rem;line-height:1.75rem}
+  .underline-offset-4{text-underline-offset:4px}.whitespace-pre-wrap{white-space:pre-wrap}.z-\[55\]{z-index:55}.z-\[90\]{z-index:90}
+  @media (min-width:640px){.sm\:p-5{padding:1.25rem}.sm\:p-6{padding:1.5rem}.sm\:pl-11{padding-left:2.75rem}}
+  #splitList [data-s] { content-visibility: auto; contain-intrinsic-size: auto 34px; } /* só desenha as linhas visíveis: listas grandes ficam rápidas */
+  /* --- Ajuda --- */
+  .hlp-panel { display: flex; flex-direction: column; max-height: 92vh; max-height: 92dvh; min-height: 0; overflow: hidden; }
+  .hlp-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px 16px; border-bottom: 1px solid rgba(100,116,139,.3); flex: 0 0 auto; }
+  .hlp-body { overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 12px 16px 24px; flex: 1 1 auto; min-height: 0; font-size: .95rem; line-height: 1.5; }
+  .hlp-body > p.intro { margin: 0 0 12px; opacity: .8; }
+  .hlp-body details { border: 1px solid rgba(100,116,139,.3); border-radius: 12px; margin-bottom: 8px; background: rgba(100,116,139,.06); }
+  .hlp-body summary { display: flex; align-items: center; gap: 8px; min-height: 48px; padding: 0 12px; font-weight: 700; cursor: pointer; list-style: none; }
+  .hlp-body summary::-webkit-details-marker { display: none; }
+  .hlp-body summary::after { content: ""; width: 16px; height: 16px; flex: none; margin-left: auto; background: currentColor; opacity: .7; transition: transform .2s; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 9l7 7 7-7'/%3E%3C/svg%3E") center/contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 9l7 7 7-7'/%3E%3C/svg%3E") center/contain no-repeat; }
+  .hlp-body details:not([open]) summary::after { transform: rotate(-90deg); }
+  .hlp-body .hb { padding: 0 14px 12px; }
+  .hlp-body .hb p { margin: 0 0 8px; }
+  .hlp-body ul, .hlp-body ol { margin: 0 0 8px; padding-left: 1.3rem; }
+  .hlp-body ul { list-style: disc; } .hlp-body ol { list-style: decimal; }
+  .hlp-body li { margin: 3px 0; }
+  .hlp-body kbd { font: inherit; font-size: .88em; font-weight: 600; padding: 1px 7px; border-radius: 7px; border: 1px solid rgba(100,116,139,.55); background: rgba(100,116,139,.12); white-space: nowrap; }
+  .hlp-body .tip { margin: 8px 0 0; padding: 8px 10px; border-radius: 10px; background: rgba(67,56,202,.10); border-left: 3px solid #4338ca; }
+  .hlp-body .warn { margin: 8px 0 0; padding: 8px 10px; border-radius: 10px; background: rgba(220,38,38,.10); border-left: 3px solid #dc2626; }
+  /* --- cabeçalho do repertório (nome sem função + menu ⋯) --- */
+  #chips .repHead { flex: 1; min-width: 0; padding: 4px 4px 4px 12px; justify-content: space-between; border: 1px solid rgba(100,116,139,.45); background: rgba(67,56,202,.10); }
+  #chips .repTitle { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: default; user-select: none; }
+  #chips .repTitle small { font-weight: 400; opacity: .7; }
+  #chips .repHead .dActs { top: calc(100% + 4px); }
+  /* --- barra de baixo da cifra: só ícones --- */
+  #navBar .navico { font-size: 20px; min-height: 48px; padding: 0 4px; }
+  /* --- teclas e pedal --- */
+  .keyrow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 0; border-bottom: 1px solid rgba(100,116,139,.25); }
+  .keyname { flex: 1 1 170px; font-weight: 700; }
+  .keychips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .kchip { display: inline-flex; align-items: center; gap: 2px; border: 1px solid rgba(100,116,139,.55); border-radius: 8px; padding: 0 2px 0 8px; background: rgba(100,116,139,.12); font-weight: 600; min-height: 34px; }
+  .kchip button { min-width: 30px; min-height: 32px; border-radius: 6px; font-size: 15px; opacity: .75; }
+  .keyadd { min-height: 36px !important; padding: 0 10px !important; }
+  .keyopt { display: flex; gap: 10px; align-items: flex-start; padding: 12px 0; cursor: pointer; }
+  .keyopt input { width: 22px; height: 22px; margin-top: 2px; flex: none; }
+  .keywait { margin: 0 0 8px; padding: 8px 10px; border-radius: 10px; background: rgba(217,119,6,.15); border-left: 3px solid #d97706; font-weight: 600; }
+  /* --- botão de tela cheia --- */
+  #vFull svg { display: block; margin: 0 auto; } #vFull .ico-exit { display: none; }
+  #vFull[aria-pressed="true"] .ico-enter { display: none; } #vFull[aria-pressed="true"] .ico-exit { display: block; }
+  #vFull[aria-pressed="true"] { background: #4338ca; color: #fff; border-color: #4338ca; }
+  /* --- ícones de seta iguais em todo o app --- */
+  .ch { display: block; margin: 0 auto; flex: none; } kbd .ch, .keyname .ch { display: inline-block; vertical-align: -3px; margin: 0; } .chev .ch { display: block; }
+  /* --- tela cheia: só a cifra, a navegação e o botão de sair --- */
+  #navFsExit { display: none; background: #4338ca; color: #fff; border-color: #4338ca; flex: 0 0 auto; min-width: 52px; margin-right: 6px; }
+  .is-fs #navFsExit { display: inline-flex; align-items: center; justify-content: center; }
+  .is-fs #viewerHeader, .is-fs #toTop, .is-fs #vTop, .is-fs #navInfo { display: none !important; }
+  .is-fs #song, .is-fs #songImg { padding-top: max(1rem, env(safe-area-inset-top)); }
+  /* --- andamento da importação --- */
+  #importProgress { position: fixed; left: 50%; bottom: max(1rem, env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 100; width: min(92vw, 460px); background: #111827; color: #fff; border-radius: 16px; padding: 14px; box-shadow: 0 10px 32px rgba(0,0,0,.45); font-size: 14px; }
+  #importProgress .ip-head { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; margin-bottom: 8px; font-size: 15px; } #importProgress .ip-head span { opacity: .75; font-size: 13px; white-space: nowrap; }
+  #importProgress .ip-all { height: 6px; border-radius: 99px; background: rgba(255,255,255,.18); overflow: hidden; margin-bottom: 10px; } #importProgress .ip-all i { display: block; height: 100%; width: 0; background: #818cf8; transition: width .25s; }
+  #importProgress .ip-list { list-style: none; margin: 0 0 10px; padding: 0; max-height: 34vh; overflow-y: auto; }
+  #importProgress .ip-row { display: grid; grid-template-columns: 22px 1fr auto; column-gap: 8px; align-items: center; padding: 6px 0; }
+  #importProgress .ip-ic::before { content: "○"; opacity: .6; } #importProgress .ip-row[data-st="run"] .ip-ic::before { content: "●"; color: #a5b4fc; opacity: 1; } #importProgress .ip-row[data-st="done"] .ip-ic::before { content: "✓"; color: #4ade80; opacity: 1; font-weight: 800; } #importProgress .ip-row[data-st="error"] .ip-ic::before { content: "!"; color: #fbbf24; opacity: 1; font-weight: 800; }
+  #importProgress .ip-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } #importProgress .ip-st { font-size: 12.5px; opacity: .8; white-space: nowrap; }
+  #importProgress .ip-bar { grid-column: 2 / 4; height: 4px; border-radius: 99px; background: rgba(255,255,255,.14); overflow: hidden; margin-top: 4px; display: none; } #importProgress .ip-row[data-st="run"] .ip-bar { display: block; } #importProgress .ip-bar i { display: block; height: 100%; width: 0; background: #a5b4fc; transition: width .25s; }
+  #importProgress .ip-row.ip-ind .ip-bar i { width: 35%; animation: ipslide 1.1s ease-in-out infinite alternate; } @keyframes ipslide { from { margin-left: 0; } to { margin-left: 65%; } }
+  #importProgress .ip-cancel { width: 100%; min-height: 42px; border: 1px solid rgba(255,255,255,.45); border-radius: 10px; font-weight: 700; color: #fff; background: transparent; }
+</style>
+</head>
+<body class="bg-slate-100 text-slate-900 dark:bg-[#0d0f14] dark:text-slate-100 min-h-screen">
+
+<!-- LISTA -->
+<div id="listView" class="max-w-3xl mx-auto">
+  <div id="topBar" class="sticky top-0 z-20 bg-slate-100/95 dark:bg-[#0d0f14]/95 backdrop-blur px-4 pt-4 pb-2" style="padding-top:max(1rem,env(safe-area-inset-top))">
+    <div class="flex items-center justify-between gap-2">
+      <div class="flex items-center gap-2">
+        <button id="btnMenu" class="btn" aria-label="Abrir ou fechar o menu" aria-expanded="false" aria-controls="drawer">☰</button>
+        <img src="logo.png" alt="" class="logo" width="34" height="40"><h1 class="text-2xl font-bold tracking-tight brand">cifrador</h1>
+      </div>
+      <button id="btnTheme" class="btn" aria-label="Alternar modo escuro">🌙</button>
+    </div>
+</div>
+<header class="px-4 pb-3 space-y-3">
+
+    <input id="search" type="search" class="fld" placeholder="Buscar por título, letra ou #tag…" autocomplete="off">
+    <div class="hidden" id="legacy"><div class="flex flex-wrap gap-2">
+      <button id="btnAdd" class="btn btn-p">＋ Adicionar / Importar</button>
+      <button id="btnCreateRep" class="btn">＋ Criar Repertório</button>
+      <button id="btnData" class="btn">💾 Meus dados</button>
+      <button id="btnTags" class="btn">🏷 Tags</button>
+    </div><div id="listActions" class="hidden flex flex-wrap gap-2">
+      <button id="lstAddSongs" class="btn btn-p">＋ Adicionar músicas</button>
+      
+      <button id="lstShare" class="btn !min-h-[40px]">🔗 Enviar Repertório</button>
+      
+      <button id="lstSave" class="btn !min-h-[40px] hidden">⬇ Salvar no meu catálogo</button>
+      <button id="lstRen" class="btn !min-h-[40px]">✎ Renomear Repertório</button>
+      <button id="lstDel" class="btn !min-h-[40px]">🗑 Excluir Repertório</button>
+    </div></div>
+    <input id="file" type="file" class="hidden" multiple="" accept="image/*,.png,.jpg,.jpeg,.webp,.pdf,.odt,.docx,.txt,.json,.html,.htm,.cho,.md,application/pdf,text/plain,application/json,text/html">
+    <div class="flex items-center gap-2"><div id="chips" class="flex gap-2 pb-1 flex-1"></div></div>
+    <div id="count" class="text-sm opacity-70"></div>
+  </header>
+  <ul id="list" class="px-4 pb-24 space-y-2"></ul>
+</div>
+
+<div id="drawerBg" class="hidden fixed inset-0 z-[55] bg-black/50"></div>
+<aside id="drawer" class="drawer" aria-label="Menu" aria-hidden="true">
+  <div class="flex items-center justify-between pb-2"><b class="text-lg">Menu</b><button id="drawerClose" class="btn" aria-label="Fechar menu">✕</button></div>
+  <nav class="space-y-1">
+    <button id="dHome" class="dItem">🏠 Página inicial</button>
+    <details id="dRepSec" class="dSec" open>
+      <summary class="dItem">🎼 Repertórios <span class="chev" aria-hidden="true"><svg class="ch" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 9l7 7 7-7"/></svg></span><button id="dNewRep" type="button" class="btn !min-h-[34px] !min-w-[38px] !px-2 ml-2 bg-indigo-600 text-white border-indigo-700 shadow-md font-bold text-xl" aria-label="Criar repertório" title="Criar repertório">＋</button></summary>
+      <div id="dReps" class="pl-10 sm:pl-11 space-y-1 border-l-2 border-slate-500/30 ml-2"></div>
+      
+    </details>
+    <button id="dTags" class="dItem">🏷 Tags</button>
+    <details id="dDataSec" class="dSec">
+      <summary class="dItem">💾 Meus Dados <span class="chev" aria-hidden="true"><svg class="ch" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 9l7 7 7-7"/></svg></span></summary>
+      <div class="pl-10 sm:pl-11 space-y-1 border-l-2 border-slate-500/30 ml-2">
+        <button id="dMenuAddSong" type="button" class="dItem !min-h-[40px] !text-sm">＋ Adicionar Cifra</button>
+        <button id="dMenuBackup" type="button" class="dItem !min-h-[40px] !text-sm">💾 Fazer Backup Cifra</button>
+        <button id="dMenuUpload" type="button" class="dItem !min-h-[40px] !text-sm">📂 Subir Backup Cifra</button>
+        <button id="dMenuDeleteAll" type="button" class="dItem !min-h-[40px] !text-sm" style="color:#dc2626">🗑 Excluir todas as Cifras</button>
+      </div>
+    </details>
+    <button id="dKeys" type="button" class="dItem">⌨️ Teclas e pedal</button>
+    <button id="dHelp" type="button" class="dItem">❓ Ajuda</button>
+  </nav>
+</aside>
+<button id="toTop" class="hidden btn btn-p" aria-label="Voltar ao topo" title="Voltar ao topo">↑</button>
+
+<!-- VISUALIZADOR -->
+<div id="viewer" class="hidden fixed inset-0 z-30 overflow-y-auto bg-slate-50 dark:bg-[#0d0f14]">
+  <div id="viewerHeader" class="sticky top-0 z-10 bg-slate-50/95 dark:bg-[#0d0f14]/95 backdrop-blur border-b border-slate-200 dark:border-slate-800 px-3 py-2 space-y-2 shadow-sm" style="padding-top:max(.5rem,env(safe-area-inset-top))">
+    <div class="vrow vr1">
+      <button id="vBack" class="btn" aria-label="Voltar">←</button>
+      <h2 id="vTitle" class="text-base font-bold truncate px-1"></h2>
+      <button id="vTheme" class="btn" aria-label="Alternar tema">🌙</button>
+      <button id="vWake" class="btn" title="Manter tela ligada" aria-label="Manter tela ligada">💡</button>
+      <button id="vToggleHeader" class="btn" title="Ocultar/Exibir menu" aria-label="Ocultar menu">👁️</button>
+      <button id="vFull" class="btn" title="Tela cheia" aria-label="Tela cheia" aria-pressed="false"><svg class="ico-enter" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg><svg class="ico-exit" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg></button>
+    </div>
+    <div id="vRows" class="space-y-2">
+      <div class="vrow vr3">
+        <div id="ctlTr"><button id="trBtn" class="btn pbtn" aria-label="Tom" title="Tom"><span class="plbl">Tom</span><b id="keyLbl">—</b></button></div>
+        <button id="fBtn" class="btn pbtn" aria-label="Tamanho do texto" title="Tamanho do texto"><span class="plbl">Tamanho</span><b id="fontLbl">16</b></button>
+        <button id="vChords" class="btn btn-on">Letra/Cifra</button>
+        <button id="vColumns" class="btn" aria-pressed="false">Coluna</button>
+        <button id="scrollPlay" class="btn btn-p" aria-label="Rolar automaticamente" title="Rolar automaticamente">▶</button>
+        <button id="vOpts" class="btn" aria-label="Mais opções" title="Mais opções">＋ Opções</button>
+      </div>
+      <div id="vNote" class="hidden flex items-center gap-2 text-xs pb-1"><span id="vNoteTxt"></span><button id="vRestore" class="underline font-semibold">Restaurar original</button></div>
+    </div>
+  </div>
+  <div id="popTone" class="hpop hidden" aria-label="Alterar tom"><button id="trDown" class="btn" aria-label="Descer um semitom">−</button><button id="trUp" class="btn" aria-label="Subir um semitom">+</button></div>
+  <div id="popFont" class="hpop hidden" aria-label="Alterar tamanho do texto"><button id="fDown" class="btn" aria-label="Diminuir o texto">−</button><button id="fUp" class="btn" aria-label="Aumentar o texto">+</button></div>
+  <div id="popOpts" class="hpop hpopg hidden" aria-label="Mais opções">
+    <button id="vColors" class="btn" data-l="Cores" aria-label="Cores" title="Cores">🎨</button>
+    <button id="vTag" class="btn" data-l="Tags" aria-label="Tags" title="Tags">🏷</button>
+    <button id="vEdit" class="btn" data-l="Editar" aria-label="Editar" title="Editar">✎</button>
+    <button id="vCopy" class="btn" data-l="Copiar" aria-label="Copiar ou duplicar" title="Copiar / Duplicar">📋</button>
+    <button id="vPdf" class="btn" data-l="PDF" aria-label="Exportar PDF" title="Exportar PDF">📄</button>
+    <button id="vFav" class="btn" data-l="Repertório" aria-label="Adicionar a um repertório" title="Repertório">☆</button>
+    <button id="trReset" class="btn" data-l="Original" aria-label="Voltar ao tom original" title="Tom original">↺</button>
+    <button id="vDel" class="btn" data-l="Excluir" aria-label="Excluir" title="Excluir">🗑</button>
+  </div>
+  <div id="colorPop" class="hidden" aria-label="Cores da cifra">
+    <label for="lyricsColor">Cor da letra <input id="lyricsColor" type="color" value="#111827" aria-label="Escolher cor da letra"></label>
+    <label for="chordColor">Cor das cifras <input id="chordColor" type="color" value="#0878c9" aria-label="Escolher cor das cifras"></label>
+  </div>
+  
+
+  <button id="vTop" class="hidden btn btn-p" aria-label="Voltar ao topo da cifra" title="Voltar ao topo">↑</button>
+  <pre id="song" class="px-4 pt-4 m-0"></pre>
+  <img id="songImg" class="hidden mx-auto max-w-full h-auto px-2 pt-4" alt="Cifra">
+  <div class="h-[40vh]"></div>
+  <div id="navBar" class="fixed bottom-0 inset-x-0 z-20 bg-slate-50/95 dark:bg-[#0d0f14]/95 backdrop-blur border-t border-slate-200 dark:border-slate-800 px-3 pt-2 flex items-center gap-2 flex-wrap" style="padding-bottom:max(.5rem,env(safe-area-inset-bottom))">
+    <div id="scrollControls" class="hidden flex items-center gap-1 w-full justify-center pb-1">
+      <button id="scrollSlower" class="btn" aria-label="Diminuir velocidade">−</button><span id="scrollSpeed" class="text-xs min-w-12 text-center">1x</span><button id="scrollFaster" class="btn" aria-label="Aumentar velocidade">＋</button>
+    </div>
+    <button id="navFsExit" class="btn navico" aria-label="Sair da tela cheia" title="Sair da tela cheia"><svg class="ch" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg></button>
+    <button id="navPrev" class="btn flex-1 navico" aria-label="Cifra anterior" title="Cifra anterior"><svg class="ch" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+    <button id="pgPrev" class="btn flex-1 navico" aria-label="Página anterior" title="Página anterior"><svg class="ch" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 15l7-7 7 7"/></svg></button>
+    <div id="navInfo" class="text-xs opacity-70 text-center max-w-[30%] truncate"></div>
+    <button id="pgNext" class="btn flex-1 navico" aria-label="Próxima página" title="Próxima página"><svg class="ch" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 9l7 7 7-7"/></svg></button>
+    <button id="navNext" class="btn flex-1 navico" aria-label="Próxima cifra" title="Próxima cifra"><svg class="ch" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
+  </div>
+</div>
+
+<!-- MODAL ADICIONAR / EDITAR -->
+<div id="modal" class="hidden fixed inset-0 z-40 bg-black/60 flex items-end sm:items-center justify-center sm:p-4">
+  <div class="bg-white dark:bg-[#141824] w-full sm:max-w-2xl max-h-[94vh] overflow-y-auto rounded-t-2xl sm:rounded-2xl p-4 space-y-3">
+    <h3 id="mHead" class="text-lg font-bold">Adicionar / Importar</h3>
+    <div class="flex flex-wrap gap-2"><button id="mChooseFile" class="btn">Escolher arquivo(s)</button></div>
+    <input id="mTitle" class="fld" placeholder="Título da música" autocomplete="off">
+    <div class="editor-wrap">
+      <pre id="mHighlight" aria-hidden="true"></pre>
+      <textarea id="mText" rows="14" class="fld font-mono text-sm" style="white-space:pre-wrap;overflow:auto" placeholder="Digite ou cole a letra e os acordes aqui…" spellcheck="false"></textarea>
+    </div>
+    <div class="flex flex-wrap gap-2 mtools"><button id="mMarkChord" class="btn edit-icon-btn" title="Marcar seleção como cifra" aria-label="Marcar seleção como cifra">🎸</button><button id="mMarkLyric" class="btn edit-icon-btn" title="Marcar seleção como letra" aria-label="Marcar seleção como letra">✍️</button><button id="mMulti" class="btn edit-icon-btn" title="Dividir em várias cifras" aria-label="Dividir em várias cifras">✂️</button><button id="mTags" class="btn edit-icon-btn" title="Editar tags" aria-label="Editar tags">🏷️</button><button id="mBold" class="btn edit-icon-btn" title="Negrito" aria-label="Negrito"><b>N</b></button><button id="mItal" class="btn edit-icon-btn" title="Itálico" aria-label="Itálico"><i>I</i></button><button id="mHigh" class="btn edit-icon-btn" title="Destacar" aria-label="Destacar">🖍️</button><button id="mClr" class="btn edit-icon-btn" title="Limpar formatação" aria-label="Limpar formatação">🧹</button></div>
+    <details class="text-sm"><summary class="cursor-pointer opacity-70">ℹ️ Ajuda — legenda dos ícones</summary><div class="text-xs opacity-80 pt-2 space-y-1"><p class="font-semibold">Legenda:</p><div class="space-y-1"><p>🎸: Marcar linha como cifra</p><p>✍️: Marcar linha como letra</p><p>✂️: Dividir o conteúdo em várias cifras</p><p>🏷️: Editar tags</p><p><strong>N</strong> : Negrito</p><p><em>i</em> : Itálico</p><p>🖍️: Destacar texto</p><p>🧹: Limpar formatação</p></div></div><p id="mChordInfo" class="text-xs opacity-70 pt-2">Selecione uma linha (ou um trecho) e use “É cifra” ou “É letra”.</p>
+    <p id="mNote" class="hidden text-sm text-amber-700 dark:text-amber-300">Você está vendo a música transposta, mas aqui o texto é o original (sem a transposição).</p>
+</details>
+    <div class="flex flex-wrap gap-2">
+      
+      <button id="mSave" class="btn btn-p">Salvar</button>
+      <button id="mCancel" class="btn">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ESCOLHA: COPIAR OU DUPLICAR -->
+<div id="cpyDlg" class="hidden fixed inset-0 z-[60] bg-black/60 flex items-center justify-center p-4">
+  <div class="bg-white dark:bg-[#141824] rounded-2xl p-5 w-full max-w-sm space-y-3" role="dialog" aria-modal="true" aria-labelledby="cpyHead">
+    <p id="cpyHead" class="font-bold">Como copiar <span id="cpyTitle"></span>?</p>
+    <button id="cpyText" class="btn btn-p w-full">📋 Copiar texto (no tom que você vê)</button>
+    <button id="cpyDup" class="btn w-full">⧉ Duplicar no meu catálogo</button>
+  </div>
+</div>
+
+<!-- DIÁLOGO DE CONFIRMAÇÃO -->
+<div id="dlg" class="fixed inset-0 z-[60] bg-black/60 flex items-center justify-center p-4 hidden">
+  <div class="bg-white dark:bg-[#141824] rounded-2xl p-5 w-full max-w-sm space-y-4">
+    <p id="dlgMsg" class="whitespace-pre-line"></p>
+    <input id="dlgIn" class="fld hidden" maxlength="40" autocomplete="off">
+    <div class="flex flex-wrap gap-2 justify-end">
+      <button id="dlgNo" class="btn">Cancelar</button>
+      <button id="dlgYes" class="btn btn-p">OK</button>
+    </div>
+  </div>
+</div>
+
+<!-- ESCOLHER LISTA -->
+<div id="pick" class="hidden fixed inset-0 z-50 bg-black/60 flex items-end sm:items-center justify-center sm:p-4">
+  <div class="bg-white dark:bg-[#141824] w-full sm:max-w-md max-h-[90vh] overflow-y-auto rounded-t-2xl sm:rounded-2xl p-4 space-y-3">
+    <h3 class="text-lg font-bold">Adicionar à lista</h3>
+    <p id="pickTitle" class="text-sm opacity-70 truncate"></p>
+    <div id="pickList" class="space-y-2"></div>
+    <div class="flex gap-2">
+      <input id="pickNew" class="fld" placeholder="Nova lista…" maxlength="40" autocomplete="off">
+      <button id="pickAdd" class="btn btn-p shrink-0">Criar</button>
+    </div>
+    <button id="pickDone" class="btn btn-p w-full">Fechar</button>
+  </div>
+</div>
+
+<!-- ENVIAR LISTA -->
+<div id="share" class="hidden fixed inset-0 z-50 bg-black/60 flex items-end sm:items-center justify-center sm:p-4">
+  <div class="bg-white dark:bg-[#141824] w-full sm:max-w-md max-h-[90vh] overflow-y-auto rounded-t-2xl sm:rounded-2xl p-4 space-y-3">
+    <h3 class="text-lg font-bold">Enviar Repertório</h3>
+    <p id="shareInfo" class="text-sm opacity-70"></p>
+    <textarea id="shareLink" readonly rows="4" class="fld text-xs break-all"></textarea>
+    <div class="flex flex-wrap gap-2">
+      <button id="shCopy" class="btn btn-p">Copiar link</button>
+      
+      <button id="shFile" class="btn">Baixar arquivo</button>
+      <button id="shPdf" class="btn">Baixar PDF</button>
+      <button id="shClose" class="btn">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MEUS DADOS -->
+<div id="data" class="hidden fixed inset-0 z-50 bg-black/60 flex items-end sm:items-center justify-center sm:p-4">
+  <div class="bg-white dark:bg-[#141824] w-full sm:max-w-md max-h-[90vh] overflow-y-auto rounded-t-2xl sm:rounded-2xl p-4 space-y-3">
+    <h3 class="text-lg font-bold">Meus dados</h3>
+    <p class="text-sm opacity-70">Suas listas, edições e cifras ficam <b>só neste aparelho e navegador</b>. Para levar para outro aparelho, envie a lista por link ou use o backup.</p>
+    <p id="dataInfo" class="text-xs opacity-70"></p>
+    <div class="flex flex-col gap-2">
+      <button id="dImportSongs" class="btn !justify-start">＋ Adicionar / Importar cifras</button>
+      <button id="dCatBackup" class="btn !justify-start">💾 Fazer Backup Catálogo</button>
+      <button id="dCatUp" class="btn !justify-start">📂 Subir novo Catálogo</button>
+      <button id="dCatDel" class="btn !justify-start" style="color:#dc2626">🗑 Excluir todas as cifras</button>
+    </div>
+    <button id="dClose" class="btn btn-p w-full">Fechar</button>
+  </div>
+</div>
+
+<div id="tagm" class="hidden fixed inset-0 z-50 bg-black/60 flex items-end sm:items-center justify-center sm:p-4">
+  <div class="bg-white dark:bg-[#141824] w-full sm:max-w-md max-h-[90vh] overflow-y-auto rounded-t-2xl sm:rounded-2xl p-4 space-y-3">
+    <h3 id="tagHead" class="text-lg font-bold">Tags</h3>
+    <div id="tagList" class="space-y-2"></div>
+    <div class="flex gap-2"><input id="tagNew" class="fld" placeholder="Nova tag…" maxlength="20" autocomplete="off"><button id="tagAdd" class="btn btn-p shrink-0">Criar</button></div>
+    <button id="tagDone" class="btn btn-p w-full">Fechar</button>
+  </div>
+</div>
+<div id="addm" class="hidden fixed inset-0 z-50 bg-black/60 flex items-end sm:items-center justify-center sm:p-4"><div class="bg-white dark:bg-[#141824] w-full sm:max-w-md max-h-[90vh] overflow-y-auto rounded-t-2xl sm:rounded-2xl p-4 space-y-3">
+  <h3 class="text-lg font-bold">Adicionar ao repertório</h3><input id="addQ" type="search" class="fld" placeholder="Buscar título, letra ou #tag…" autocomplete="off">
+  <div id="addList" class="space-y-2 max-h-56 overflow-y-auto"></div>
+  <div class="flex gap-2"><button id="addCancel" class="btn flex-1">Fechar</button><button id="addOk" class="btn btn-p flex-1">Adicionar</button></div></div></div>
+<div id="splitm" class="hidden fixed inset-0 z-50 bg-black/60 flex items-end sm:items-center justify-center sm:p-4"><div class="bg-white dark:bg-[#141824] w-full sm:max-w-2xl max-h-[94vh] flex flex-col rounded-t-2xl sm:rounded-2xl p-4 space-y-3">
+  <h3 class="text-lg font-bold">Dividir em várias cifras</h3><p class="text-xs opacity-70">Toque nas linhas que são o <b>título</b> de uma música: cada linha marcada começa uma nova cifra. Já marquei as que parecem título.</p>
+  <div id="splitList" class="flex-1 overflow-y-auto border border-slate-200 dark:border-slate-700 rounded-xl font-mono text-xs"></div><div id="splitInfo" class="text-sm opacity-70"></div>
+  <div class="flex gap-2"><button id="splitCancel" class="btn flex-1">Fechar</button><button id="splitOk" class="btn btn-p flex-1">Dividir</button></div></div></div>
+<div id="importError" class="hidden fixed inset-0 z-[90] bg-black/65 flex items-center justify-center p-3 sm:p-6" role="alert" aria-live="assertive"><section class="w-full max-w-2xl max-h-[88vh] flex flex-col overflow-hidden rounded-2xl bg-white text-slate-900 shadow-2xl border border-red-300"><header class="flex items-start gap-3 p-4 sm:p-5 bg-red-50 border-b border-red-200"><span class="flex items-center justify-center shrink-0 w-10 h-10 rounded-full bg-red-100 text-red-700 text-2xl font-bold" aria-hidden="true">!</span><div class="flex-1 min-w-0"><h3 class="text-lg font-bold text-red-900">Não foi possível concluir a importação</h3><p class="text-sm text-red-800 mt-1">Confira os detalhes abaixo. Seus dados não foram apagados.</p></div><button id="importErrorClose" type="button" class="shrink-0 rounded-lg border border-red-200 hover:bg-red-100 w-10 h-10 text-2xl leading-none font-bold" aria-label="Fechar erro" title="Fechar">×</button></header><div id="importErrorText" class="p-4 sm:p-5 overflow-y-auto whitespace-pre-wrap break-words text-sm leading-relaxed"></div><footer class="p-3 sm:p-4 border-t border-slate-200 bg-slate-50 text-right"><button type="button" id="importErrorOk" class="btn btn-p">Entendi</button></footer></section></div>
+<!-- TECLAS E PEDAL -->
+<div id="keys" class="hidden fixed inset-0 bg-black/60 flex items-end sm:items-center justify-center sm:p-4" style="z-index:70">
+  <div class="bg-white dark:bg-[#141824] w-full sm:max-w-2xl rounded-t-2xl sm:rounded-2xl hlp-panel" role="dialog" aria-modal="true" aria-labelledby="keysTitle">
+    <div class="hlp-head"><h3 id="keysTitle" class="text-lg font-bold">⌨️ Teclas e pedal de página</h3><button id="keysClose" type="button" class="btn" aria-label="Fechar" style="font-weight:800">✕</button></div>
+    <div class="hlp-body" id="keysBody"></div>
+  </div>
+</div>
+<!-- AJUDA -->
+<div id="help" class="hidden fixed inset-0 bg-black/60 flex items-end sm:items-center justify-center sm:p-4" style="z-index:70">
+  <div class="bg-white dark:bg-[#141824] w-full sm:max-w-2xl rounded-t-2xl sm:rounded-2xl hlp-panel" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+    <div class="hlp-head"><h3 id="helpTitle" class="text-lg font-bold">❓ Ajuda: como usar o Cifrador</h3><button id="helpClose" type="button" class="btn" aria-label="Fechar ajuda" style="font-weight:800">✕</button></div>
+    <div class="hlp-body" id="helpBody">
+    <p class="intro">Toque em um assunto para abrir. Os nomes entre <kbd>caixinhas</kbd> são os botões que você vê na tela.</p>
+    <details open><summary>🚀 Primeiros passos</summary><div class="hb">
+      <ol>
+        <li>Toque em <kbd>☰</kbd> (canto superior esquerdo) para abrir o <b>menu</b>.</li>
+        <li>Em <kbd>💾 Meus Dados</kbd>, toque em <kbd>＋ Adicionar Cifra</kbd> para digitar, colar ou importar uma cifra.</li>
+        <li>Na página inicial, toque no <b>nome da música</b> para abrir. Lá você muda o tom, o tamanho do texto e liga a rolagem automática.</li>
+        <li>Crie <b>repertórios</b> (listas de músicas) em <kbd>🎼 Repertórios</kbd> → <kbd>＋</kbd>.</li>
+      </ol>
+      <p class="warn"><b>Importante:</b> suas cifras ficam <b>só neste aparelho e neste navegador</b>. Faça backup de vez em quando (veja “Backup e seus dados”).</p>
+    </div></details>
+    <details><summary>➕ Adicionar cifras</summary><div class="hb">
+      <p><b>Digitando ou colando:</b> escreva o título e cole a letra com os acordes em cima, como em qualquer cifra. O Cifrador reconhece sozinho quais linhas são de acordes. Toque em <kbd>Salvar</kbd>.</p>
+      <p><b>Importando arquivos:</b> toque em <kbd>Escolher arquivo(s)</kbd>. Você pode escolher vários de uma vez. Aceita:</p>
+      <ul>
+        <li>Texto e documentos: <b>.txt, .docx, .odt, .pdf, .html, .md, .cho</b></li>
+        <li>Backups do Cifrador: <b>.json</b></li>
+        <li>Fotos e prints: <b>.png, .jpg, .webp</b></li>
+      </ul>
+      <p><b>Fotos e PDFs escaneados:</b> o app lê o texto da imagem direto no seu aparelho, sem enviar nada para a internet. O resultado abre no editor para você revisar.</p>
+      <p class="tip"><b>Dica:</b> a leitura de fotos pode errar alguns acordes. Confira antes de salvar, e use <kbd>🎸</kbd> ou <kbd>✍️</kbd> para corrigir o que for cifra ou letra. Na primeira vez ela pode demorar um pouco.</p>
+      <p>Se o arquivo traz <b>várias músicas juntas</b>, use <kbd>✂️</kbd> (próxima seção).</p>
+    </div></details>
+    <details><summary>✂️ Dividir um arquivo com várias músicas</summary><div class="hb">
+      <ol>
+        <li>No editor, com o texto carregado, toque em <kbd>✂️</kbd>.</li>
+        <li>O app já marca as linhas que parecem <b>título</b>. Cada linha de título começa uma nova cifra.</li>
+        <li>Para corrigir uma linha, toque no botão do tipo dela: ele alterna entre <kbd>📝 Letra</kbd> → <kbd>🎸 Cifra</kbd> → <kbd>🏷️ Título</kbd>.</li>
+        <li>Toque no texto de uma linha para editá-lo e em <kbd>×</kbd> para excluí-la.</li>
+        <li>Quando estiver certo, toque em <kbd>Dividir</kbd> e confira o resultado.</li>
+      </ol>
+    </div></details>
+    <details><summary>🎸 Tocando a cifra (tela da música)</summary><div class="hb">
+      <p><b>Linha de cima:</b> <kbd>←</kbd> volta para a lista, <kbd>🌙</kbd> muda para o tema claro ou escuro, <kbd>💡</kbd> mantém a tela ligada e <kbd>👁️</kbd> esconde ou mostra os controles para sobrar mais espaço e o botão de <b>tela cheia</b> (quatro cantinhos) deixa na tela <b>só a cifra</b>, os botões de navegação e o botão de sair. Para voltar, toque no botão roxo de sair, no canto esquerdo da barra de baixo.</p>
+      <p class="tip"><b>iPhone:</b> o Safari não esconde a própria barra. Para usar a tela toda, instale o Cifrador (Compartilhar → Adicionar à Tela de Início) e abra pelo ícone.</p>
+      <p><b>Controles principais:</b></p>
+      <ul>
+        <li><kbd>Tom</kbd>: toque para subir (<kbd>+</kbd>) ou descer (<kbd>−</kbd>) meio tom. O tom escolhido fica salvo para aquela música.</li>
+        <li><kbd>Tamanho</kbd>: aumenta ou diminui o texto. No celular você também pode usar o <b>gesto de pinça</b> com dois dedos.</li>
+        <li><kbd>Letra</kbd> / <kbd>Cifra</kbd>: alterna entre ver só a letra ou a letra com os acordes.</li>
+        <li><kbd>1 col.</kbd> / <kbd>2 col.</kbd>: mostra o texto em uma ou duas colunas.</li>
+        <li><kbd><svg class="ch" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></kbd>: liga a <b>rolagem automática</b>. Aparecem <kbd>−</kbd> e <kbd>＋</kbd> para ajustar a velocidade, e <kbd>⏸</kbd> pausa.</li>
+        <li><kbd>＋ Opções</kbd>: mais ações (veja a próxima seção).</li>
+      </ul>
+      <p><b>Embaixo, quatro botões só com ícones:</b></p>
+      <ul>
+        <li><kbd><svg class="ch" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></kbd> <b>cifra anterior</b> e <kbd><svg class="ch" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></kbd> <b>próxima cifra</b>: seguem a lista que você está vendo (a busca, uma tag ou um repertório).</li>
+        <li><kbd><svg class="ch" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 15l7-7 7 7"/></svg></kbd> <b>página anterior</b> e <kbd><svg class="ch" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 9l7 7 7-7"/></svg></kbd> <b>próxima página</b>: rolam a cifra de uma "tela" de cada vez, como se você tivesse arrastado o dedo.</li>
+      </ul>
+      <p class="tip"><b>No computador:</b> <kbd>↑</kbd> <kbd>↓</kbd> (ou <kbd>Page Up</kbd> <kbd>Page Down</kbd>) mudam de página, <kbd>←</kbd> <kbd>→</kbd> trocam de cifra e <kbd>Esc</kbd> volta. Dá para trocar essas teclas (veja “Teclas e pedal de página”).</p>
+    </div></details>
+    <details><summary>⌨️ Teclas e pedal de página</summary><div class="hb">
+      <p>Se você usa um <b>pedal de página</b> (ou outro controle Bluetooth, ou só o teclado), pode escolher quais teclas fazem cada ação na tela da cifra: cifra anterior, página anterior, próxima página e próxima cifra.</p>
+      <ol>
+        <li>No menu, toque em <kbd>⌨️ Teclas e pedal</kbd>.</li>
+        <li>Na ação que você quer, toque em <kbd>＋ Tecla</kbd> e depois <b>aperte a tecla ou o botão do pedal</b>. O app grava a que você apertou.</li>
+        <li>Para tirar uma tecla, toque no <kbd>×</kbd> dela.</li>
+      </ol>
+      <p class="tip"><b>Pedal de um botão só?</b> Ligue a opção <kbd>No fim da cifra, a tecla de “Próxima página” abre a próxima cifra</kbd> e coloque o botão do pedal em “Próxima página”. Ele passa as páginas e, quando a cifra acaba, vai sozinho para a seguinte.</p>
+      <p>Cada pedal manda uma tecla diferente (setas, Page Up/Page Down, Espaço, Enter…). Por isso é você quem escolhe. As teclas ficam guardadas neste aparelho.</p>
+    </div></details>
+    <details><summary>＋ Opções da música</summary><div class="hb">
+      <ul>
+        <li><kbd>🎨</kbd> <b>Cores</b>: muda a cor da letra e a cor das cifras.</li>
+        <li><kbd>🏷</kbd> <b>Tags</b>: etiquetas para organizar (louvor, rápida, ceia…).</li>
+        <li><kbd>✎</kbd> <b>Editar</b>: corrige título, letra e acordes.</li>
+        <li><kbd>📋</kbd> <b>Copiar</b>: copia o texto (no tom que você está vendo) ou duplica a cifra no seu catálogo.</li>
+        <li><kbd>📄</kbd> <b>PDF</b>: gera um PDF da cifra.</li>
+        <li><kbd>☆</kbd> <b>Repertório</b>: adiciona a música a uma lista.</li>
+        <li><kbd>↺</kbd> <b>Original</b>: volta ao tom original.</li>
+        <li><kbd>🗑</kbd> <b>Excluir</b>: remove a música.</li>
+      </ul>
+    </div></details>
+    <details><summary>✎ Editando e corrigindo cifras</summary><div class="hb">
+      <ul>
+        <li>Se o app errou uma linha, <b>selecione a linha</b> e toque em <kbd>🎸</kbd> (é cifra) ou <kbd>✍️</kbd> (é letra).</li>
+        <li><kbd>N</kbd> negrito, <kbd>I</kbd> itálico, <kbd>🖍️</kbd> destaque e <kbd>🧹</kbd> limpa a formatação.</li>
+        <li>Quando a música está transposta, o editor mostra o <b>texto original</b> (sem a transposição).</li>
+        <li>Se você editar uma cifra que veio do catálogo, aparece um aviso com o botão <kbd>Restaurar original</kbd>.</li>
+      </ul>
+      <p>Toque em <kbd>Salvar</kbd> para guardar. Se tentar sair com alterações não salvas, o app avisa.</p>
+    </div></details>
+    <details><summary>🔍 Buscar e organizar com tags</summary><div class="hb">
+      <ul>
+        <li>A caixa de busca procura por <b>título</b>, por <b>trechos da letra</b> e por <b>tags</b>.</li>
+        <li>Comece com <kbd>#</kbd> (por exemplo <kbd>#louvor</kbd>) para procurar <b>somente</b> nas tags.</li>
+        <li>Crie, renomeie e apague tags em <kbd>🏷 Tags</kbd> no menu. Para marcar uma música, use o <kbd>🏷</kbd> dela.</li>
+        <li>Na lista, toque em <kbd>⋯</kbd> ao lado de uma música para as <b>ações rápidas</b>: repertório, tags, copiar, PDF, editar e excluir.</li>
+        <li><kbd>🏠 Página inicial</kbd>, no menu, limpa a busca e mostra tudo de novo.</li>
+      </ul>
+    </div></details>
+    <details><summary>🎼 Repertórios (listas de músicas)</summary><div class="hb">
+      <ul>
+        <li><b>Criar:</b> no menu, em <kbd>🎼 Repertórios</kbd>, toque em <kbd>＋</kbd>.</li>
+        <li><b>Adicionar músicas:</b> toque em <kbd>☆</kbd> na música, ou abra o repertório e use <kbd>＋ Adicionar músicas</kbd>.</li>
+        <li><b>Ver:</b> toque no nome do repertório no menu. O <kbd>◀ Anterior</kbd> e o <kbd>Próxima ▶</kbd> seguem a ordem dele.</li>
+        <li><b>Ações do repertório:</b> toque em <kbd>⋯</kbd> ao lado do nome para <kbd>＋</kbd> adicionar músicas, <kbd>✎</kbd> renomear, <kbd>🔗</kbd> enviar ou <kbd>🗑</kbd> excluir.</li>
+        <li><b>Reordenar:</b> arraste pelo ícone <kbd>☰</kbd> ao lado do nome.</li>
+        <li><b>Recebidos:</b> repertórios que alguém enviou para você aparecem com 📥. Use <kbd>⬇</kbd> para salvá-los no seu catálogo.</li>
+      </ul>
+    </div></details>
+    <details><summary>🔗 Enviar para outras pessoas</summary><div class="hb">
+      <ol>
+        <li>Escolha o repertório e toque em <kbd>🔗 Enviar Repertório</kbd>.</li>
+        <li>Toque em <kbd>Copiar link</kbd> e mande pelo WhatsApp ou onde preferir. Você também pode usar <kbd>Baixar arquivo</kbd> ou <kbd>Baixar PDF</kbd>.</li>
+        <li>Quem abrir o link recebe o repertório e pode tocar em <kbd>⬇ Salvar no meu catálogo</kbd> para ficar com as cifras.</li>
+      </ol>
+      <p class="tip">O link leva <b>uma cópia</b> do repertório (a pessoa não precisa de conta). Se você mudar algo depois, as mudanças <b>não</b> chegam sozinhas: envie de novo.</p>
+    </div></details>
+    <details><summary>💾 Backup e seus dados</summary><div class="hb">
+      <p>Suas cifras, repertórios e tags ficam guardados <b>apenas neste aparelho e navegador</b>. Se você limpar os dados do navegador, trocar de celular ou usar outro navegador, elas não aparecem.</p>
+      <ul>
+        <li><kbd>💾 Fazer Backup Cifra</kbd>: baixa um arquivo com suas cifras, repertórios, tags e tons salvos. Cifras que existem só como imagem ficam de fora. Guarde o arquivo em lugar seguro (Drive, e-mail, computador).</li>
+        <li><kbd>📂 Subir Backup Cifra</kbd>: traz de volta as cifras de um arquivo de backup. É assim que você leva tudo para outro aparelho.</li>
+        <li><kbd>🗑 Excluir todas as Cifras</kbd>: apaga todas as cifras (os repertórios continuam, mas vazios). O app pede confirmação duas vezes e baixa um backup antes, mas guarde o seu próprio também.</li>
+      </ul>
+      <p class="warn"><b>Dica de ouro:</b> faça um backup depois de cada sessão em que você importar ou editar muita coisa.</p>
+      <p>Os três botões ficam em <kbd>💾 Meus Dados</kbd> no menu.</p>
+    </div></details>
+    <details><summary>🛠 Dicas e problemas comuns</summary><div class="hb">
+      <ul>
+        <li><b>Tema escuro:</b> toque em <kbd>🌙</kbd> na página inicial ou na tela da música.</li>
+        <li><b>Instalar como app:</b> no Chrome do Android, abra o menu <kbd>⋮</kbd> e escolha “Instalar app” ou “Adicionar à tela inicial”. No iPhone (Safari), toque em Compartilhar e depois em “Adicionar à Tela de Início”.</li>
+        <li><b>Sem internet:</b> depois de aberto uma vez com internet, o Cifrador costuma abrir sem conexão. A leitura de fotos precisa ter sido usada antes com internet.</li>
+        <li><b>Apareceu um aviso vermelho ao importar:</b> ele explica o que houve com o arquivo. Os outros arquivos escolhidos continuam sendo importados.</li>
+        <li><b>O catálogo não carregou:</b> verifique a internet e recarregue a página. Suas cifras continuam aparecendo.</li>
+        <li><b>Acordes lidos errado numa foto:</b> abra <kbd>✎ Editar</kbd> e corrija com <kbd>🎸</kbd> e <kbd>✍️</kbd>.</li>
+      </ul>
+    </div></details>
+    </div>
+  </div>
+</div>
+<div id="toast" class="fixed left-1/2 -translate-x-1/2 bottom-6 z-50 max-w-[90vw] px-4 py-3 rounded-xl bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 text-sm shadow-lg hidden"></div>
+
+<script src="cifrador.js"></script>
+
+</body>
+</html>
