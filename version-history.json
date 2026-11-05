@@ -1,6 +1,17 @@
 {
   "releases": [
     {
+      "version": "1.0.3",
+      "releaseDate": "2026-11-05",
+      "title": "Demo temporária com acessos restritos",
+      "changes": [
+        "Oculta Adicionar Cifra, Meus Dados e Ajuda durante a demonstração.",
+        "Alterações da demonstração ficam somente em memória de sessão e são descartadas ao sair ou recarregar.",
+        "A demonstração sempre reinicia com as 10 cifras, TAGs e repertório inicial.",
+        "Corrige a chamada remanescente do banner que foi comentado."
+      ]
+    },
+    {
       "version": "1.0.2",
       "releaseDate": "2026-11-05",
       "title": "Demo usando a interface real da aplicação",

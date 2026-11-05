@@ -144,7 +144,7 @@ function cleanUser(r) { // valida TUDO o que vem do armazenamento ou de um arqui
 function save() {
   try {
     localStorage.setItem(UKEY, JSON.stringify(U));
-    if (!persistAsked) { persistAsked = true; try { navigator.storage && navigator.storage.persist && navigator.storage.persist().catch(() => {}); } catch (e) {} }
+    if (!window.CIFRADOR_DEMO && !persistAsked) { persistAsked = true; try { navigator.storage && navigator.storage.persist && navigator.storage.persist().catch(() => {}); } catch (e) {} }
     return true;
   } catch (e) { toast('Não foi possível salvar: armazenamento cheio ou bloqueado.'); return false; }
 }
