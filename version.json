@@ -1,11 +1,11 @@
 {
-  "version": "1.0.3",
+  "version": "1.0.4",
   "releaseDate": "2026-11-05",
-  "title": "Demo temporária com acessos restritos",
+  "title": "Atalhos no topo da demonstração",
   "changes": [
-    "Oculta Adicionar Cifra, Meus Dados e Ajuda durante a demonstração.",
-    "Alterações da demonstração ficam somente em memória de sessão e são descartadas ao sair ou recarregar.",
-    "A demonstração sempre reinicia com as 10 cifras, TAGs e repertório inicial.",
-    "Corrige a chamada remanescente do banner que foi comentado."
+    "Adiciona, somente na Demo, o atalho para voltar à página de apresentação.",
+    "Adiciona, somente na Demo, o botão de instalação do Cifrador no celular.",
+    "Exibe instruções de instalação conforme o navegador quando a instalação direta não está disponível.",
+    "Mantém a interface da aplicação definitiva sem a barra de demonstração."
   ]
 }

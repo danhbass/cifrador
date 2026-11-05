@@ -1730,41 +1730,17 @@ $('#viewer').addEventListener('touchmove', e => {
 }, { passive: false });
 $('#viewer').addEventListener('touchend', e => { if (e.touches.length < 2 && pz) { pz = null; saveUi(); } });
 (async function init() {
-  let t = null;
-
-  try {
-    t = localStorage.getItem(TKEY);
-  } catch (e) {}
-
-  applyTheme(
-    t ? t === 'dark' :
-    window.matchMedia('(prefers-color-scheme: dark)').matches
-  );
-
+  if (window.prepareCifradorDemo) { try { await window.prepareCifradorDemo(); } catch (e) { console.error(e); } }
+  let t = null; try { t = localStorage.getItem(TKEY); } catch (e) {}
+  applyTheme(t ? t === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches);
   await loadCatalog();
-
-  // Na Demo, preparar os dados antes de carregá-los na aplicação.
-  if (window.CIFRADOR_DEMO && window.prepareCifradorDemo) {
-    await window.prepareCifradorDemo();
-  }
-
-  loadUser();
-  rebuild();
-
-  // A Demo sempre começa na tela principal.
-  if (window.CIFRADOR_DEMO) {
-    st.list = 'all';
-    st.tag = null;
-    st.q = '';
-    $('#search').value = '';
-  }
-
-  renderList();
-
-  if (!catOk) {
-    toast('Não consegui carregar o catálogo. Mostrando só as suas cifras.');
-  }
+  loadUser(); if (window.CIFRADOR_DEMO) st.list = 'demo-repertorio'; rebuild(); renderList();
+  if (!catOk) toast('Não consegui carregar o catálogo. Mostrando só as suas cifras.');
+  else if (migInfo) toast('Seus dados foram atualizados' + (migInfo.kept ? ': ' + migInfo.kept + ' cifra(s) suas ficaram em “minhas”' : '') + (migInfo.edited ? ', ' + migInfo.edited + ' edição(ões) preservada(s)' : '') + '.');
+  checkHash();
+  if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) navigator.serviceWorker.register('sw.js').catch(() => {});
 })();
+
 
 // Fechar janelas pelo fundo (mouse/toque), com o mesmo comportamento do botão Fechar.
 ['#modal','#cpyDlg','#pick','#share','#data','#tagm','#addm','#splitm'].forEach(sel=>{const el=$(sel); if(el) el.addEventListener('click',e=>{if(e.target!==el)return; if(sel==='#modal') closeModal(); else if(sel==='#cpyDlg') { /* copyChoice handles its own promise */ } else el.classList.add('hidden');});});

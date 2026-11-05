@@ -1,6 +1,6 @@
 /* Cifrador PWA — cache isolado por versão e ativação sob consentimento.
    O parâmetro ?v= é definido pelo version.json somente após o usuário autorizar. */
-const VERSION = new URL(self.location.href).searchParams.get('v') || '1.0.3';
+const VERSION = new URL(self.location.href).searchParams.get('v') || '1.0.4';
 const CACHE = 'cifrador-static-' + VERSION;
 const CORE = [
   './', './index.html', './app/', './app/index.html', './demo/', './demo/index.html',
