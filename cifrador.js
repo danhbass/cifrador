@@ -1,5 +1,6 @@
 
 /* ============ Utilidades ============ */
+const localStorage = window.CIFRADORStorage || window.localStorage;
 const $ = s => document.querySelector(s);
 const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 const norm = s => String(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
@@ -1729,10 +1730,11 @@ $('#viewer').addEventListener('touchmove', e => {
 }, { passive: false });
 $('#viewer').addEventListener('touchend', e => { if (e.touches.length < 2 && pz) { pz = null; saveUi(); } });
 (async function init() {
+  if (window.prepareCifradorDemo) { try { await window.prepareCifradorDemo(); } catch (e) { console.error(e); } }
   let t = null; try { t = localStorage.getItem(TKEY); } catch (e) {}
   applyTheme(t ? t === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches);
   await loadCatalog();
-  loadUser(); rebuild(); renderList();
+  loadUser(); if (window.CIFRADOR_DEMO) st.list = 'demo-repertorio'; rebuild(); renderList();
   if (!catOk) toast('Não consegui carregar o catálogo. Mostrando só as suas cifras.');
   else if (migInfo) toast('Seus dados foram atualizados' + (migInfo.kept ? ': ' + migInfo.kept + ' cifra(s) suas ficaram em “minhas”' : '') + (migInfo.edited ? ', ' + migInfo.edited + ' edição(ões) preservada(s)' : '') + '.');
   checkHash();

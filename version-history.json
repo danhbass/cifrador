@@ -1,6 +1,17 @@
 {
   "releases": [
     {
+      "version": "1.0.2",
+      "releaseDate": "2026-11-05",
+      "title": "Demo usando a interface real da aplicação",
+      "changes": [
+        "A Demo agora abre a mesma interface da aplicação principal.",
+        "As 10 cifras, TAGs e o repertório inicial de 5 músicas são carregados no modo demonstração.",
+        "Os dados da Demo ficam isolados em armazenamento temporário por aba e não alteram os dados pessoais.",
+        "A URL antiga /demo/ redireciona para a interface real em modo demonstração."
+      ]
+    },
+    {
       "version": "1.0.1",
       "releaseDate": "2026-11-05",
       "title": "Catálogo de demonstração com repertório e TAGs",

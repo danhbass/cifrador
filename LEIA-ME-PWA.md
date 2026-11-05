@@ -33,3 +33,7 @@ A estratégia de URL versionada depende de suporte ao ciclo de vida padrão de S
 - `skipWaiting()` só é enviado depois do clique em Atualizar agora. A ativação afeta o escopo inteiro; outras abas sob o mesmo escopo poderão receber o novo controller e recarregar conforme a política do navegador. Dados locais permanecem no mesmo origin.
 - A recuperação de falha de instalação mantém o worker anterior ativo. Não existe rollback automático garantido para uma versão que foi ativada e contém defeito de aplicação; publique uma versão corrigida com número superior.
 - Para produção, configure a hospedagem para não armazenar `version.json` em cache e mantenha HTTPS.
+
+
+## Modo demonstração (v1.0.2)
+A rota `/demo/` abre a mesma interface da aplicação em `app/?demo=1`. Os dados de demonstração usam um armazenamento isolado por aba; não reutilizam nem sobrescrevem os dados pessoais do modo normal.

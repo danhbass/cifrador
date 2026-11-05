@@ -1,0 +1,130 @@
+{
+  "songs": [
+    {
+      "id": "canoa",
+      "name": "A Canoa Virou",
+      "key": "C",
+      "tags": [
+        "Cantiga de roda",
+        "Infantil",
+        "Fácil",
+        "Tradicional brasileira"
+      ],
+      "lyrics": "C\nA canoa virou\n              G7\nPor deixar ela virar\nG7\nFoi por causa de Maria\n              C\nQue não soube remar\n\nC\nSe eu fosse um peixinho\n              G7\nE soubesse nadar\nG7\nEu tirava Maria\n              C\nDo fundo do mar"
+    },
+    {
+      "id": "aranha",
+      "name": "A Dona Aranha",
+      "key": "C",
+      "tags": [
+        "Infantil",
+        "Fácil",
+        "Tradicional brasileira"
+      ],
+      "lyrics": "C\nA dona aranha\n             G7\nSubiu pela parede\nG7\nVeio a chuva forte\n             C\nE a derrubou\n\nC\nJá passou a chuva\n             F\nE o sol já vai surgindo\nC\nE a dona aranha\nG7           C\nContinua a subir"
+    },
+    {
+      "id": "gato",
+      "name": "Atirei o Pau no Gato",
+      "key": "G",
+      "tags": [
+        "Cantiga de roda",
+        "Infantil",
+        "Fácil",
+        "Tradicional brasileira"
+      ],
+      "lyrics": "G\nAtirei o pau no gato\n             D7\nMas o gato não morreu\nD7\nDona Chica admirou-se\n             G\nDo berro que o gato deu\n\nG\nMiau!\nD7"
+    },
+    {
+      "id": "borboletinha",
+      "name": "Borboletinha",
+      "key": "C",
+      "tags": [
+        "Infantil",
+        "Fácil",
+        "Tradicional brasileira"
+      ],
+      "lyrics": "C\nBorboletinha\n             G7\nEstá na cozinha\nG7\nFazendo chocolate\n             C\nPara a madrinha\n\nC\nPoti, poti\n             F\nPerna de pau\nC\nOlho de vidro\nG7           C\nE nariz de pica-pau"
+    },
+    {
+      "id": "carneirinho",
+      "name": "Carneirinho, Carneirão",
+      "key": "G",
+      "tags": [
+        "Cantiga de roda",
+        "Infantil",
+        "Fácil",
+        "Tradicional brasileira"
+      ],
+      "lyrics": "G\nCarneirinho, carneirão\n             D7\nNeirão, neirão\nD7\nOlhai para o céu\n             G\nOlhai para o chão\n\nG\nManda o rei\n             C\nNos mandar\nG\nQue nos mande\nD7           G\nAjoelhar"
+    },
+    {
+      "id": "escravos",
+      "name": "Escravos de Jó",
+      "key": "C",
+      "tags": [
+        "Cantiga de roda",
+        "Infantil",
+        "Fácil",
+        "Tradicional brasileira",
+        "Refrão"
+      ],
+      "lyrics": "C\nEscravos de Jó\n             G7\nJogavam caxangá\nG7\nTira, põe\n             C\nDeixa ficar\n\nC\nGuerreiros com guerreiros\n             F\nFazem zigue-zigue-zá\nC\nGuerreiros com guerreiros\nG7           C\nFazem zigue-zigue-zá"
+    },
+    {
+      "id": "margarida",
+      "name": "Onde Está a Margarida?",
+      "key": "G",
+      "tags": [
+        "Cantiga de roda",
+        "Infantil",
+        "Fácil",
+        "Tradicional brasileira"
+      ],
+      "lyrics": "G\nOnde está a Margarida?\n             D7\nOlê, olê, olá\n\nD7\nOnde está a Margarida?\n             G\nOlê, seus cavalheiros\n\nG\nEla está em seu castelo\n             D7\nOlê, olê, olá\n\nD7\nEla está em seu castelo\n             G\nOlê, seus cavalheiros"
+    },
+    {
+      "id": "pai-francisco",
+      "name": "Pai Francisco",
+      "key": "C",
+      "tags": [
+        "Cantiga de roda",
+        "Infantil",
+        "Fácil",
+        "Tradicional brasileira"
+      ],
+      "lyrics": "C\nPai Francisco entrou na roda\n             G7\nTocando seu violão\n\nG7\nDão, dão, dão\n             C\nDão, dão, dão\n\nC\nVem de lá seu delegado\n             F\nE Pai Francisco foi pra prisão\n\nC\nComo ele vem todo requebrado\nG7           C\nParece um boneco desengonçado"
+    },
+    {
+      "id": "teresinha",
+      "name": "Teresinha de Jesus",
+      "key": "G",
+      "tags": [
+        "Cantiga de roda",
+        "Infantil",
+        "Fácil",
+        "Tradicional brasileira"
+      ],
+      "lyrics": "G\nTeresinha de Jesus\n             D7\nDe uma queda foi ao chão\n\nD7\nAcudiram três cavalheiros\n             G\nTodos de chapéu na mão\n\nG\nO primeiro foi seu pai\n             C\nO segundo seu irmão\n\nG\nO terceiro foi aquele\nD7           G\nQue a Teresa deu a mão"
+    },
+    {
+      "id": "hino",
+      "name": "Hino Nacional Brasileiro",
+      "key": "C",
+      "tags": [
+        "Hino",
+        "Nacional",
+        "Avançado",
+        "Duas partes"
+      ],
+      "lyrics": "[Primeira Parte]\n\nC\nOuviram do Ipiranga as margens plácidas\n                     A7            Dm  A7\nDe um povo heroico o brado retumbante\nDm              A7              Dm  A7\nE o sol da liberdade, em raios fúlgidos\nDm                  G7              C\nBrilhou no céu da pátria nesse instante\n\n     E7                Am\nSe o penhor dessa igualdade\n      E7                        Am\nConseguimos conquistar com braço forte\n       D7            G\nEm teu seio, ó liberdade\n   D7                            G\nDesafia o nosso peito a própria morte!\n         G7\nÓ Pátria amada\nIdolatrada\nSalve! Salve!\n\nC\nBrasil, um sonho intenso, um raio vívido\n                A7               Dm  A7\nDe amor e de esperança à terra desce\n      Dm          A7              Dm  A7\nSe em teu formoso céu, risonho e límpido\n   Dm          G7            C\nA imagem do Cruzeiro resplandece\n\n    C7                      F\nGigante pela própria natureza\n   D7                         G\nÉs belo, és forte, impávido colosso\n    E                         Am  F\nE o teu futuro espelha essa grandeza\n       C\nTerra adorada\nF              C\nEntre outras mil\n           F\nÉs tu, Brasil\n         C    F\nÓ Pátria amada!\n            C          F       C\nDos filhos deste solo és mãe gentil\n        G\nPátria amada\n   C\nBrasil!\n\n[Segunda Parte]\n\nC\nDeitado eternamente em berço esplêndido\n                  A7              Dm  A7\nAo som do mar e à luz do céu profundo\nDm            A7               Dm  A7\nFulguras, ó Brasil, florão da América\nDm           G7              C\nIluminado ao sol do Novo Mundo!\n\nE7                     Am\nDo que a terra mais garrida\n       E7                                  Am\nTeus risonhos, lindos campos têm mais flores\n       D7                 G\nNossos bosques têm mais vida\n       D7                          G\nNossa vida, no teu seio, mais amores\n         G7\nÓ Pátria amada\nIdolatrada\nSalve! Salve!\n\nC\nBrasil, de amor eterno seja símbolo\n              A7            Dm  A7\nO lábaro que ostentas estrelado\n  Dm            A7           Dm  A7\nE diga o verde-louro dessa flâmula\n  Dm             G7               C\nPaz no futuro e glória no passado\n\nC7                              F\nMas, se ergue da justiça a clava forte\n  D7                                G\nVerás que um filho teu não foge à luta\n  E                                Am  F\nNem teme quem te adora, a própria morte\n      C\nTerra adorada\nF              C\nEntre outras mil\n           F\nÉs tu, Brasil\n         C    F\nÓ Pátria amada!\n            C          F       C\nDos filhos deste solo és mãe gentil\n         G\nPátria amada\n  C\nBrasil!"
+    }
+  ],
+  "initialRepertoire": [
+    "canoa",
+    "gato",
+    "escravos",
+    "teresinha",
+    "hino"
+  ]
+}

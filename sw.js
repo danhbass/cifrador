@@ -1,10 +1,10 @@
 /* Cifrador PWA — cache isolado por versão e ativação sob consentimento.
    O parâmetro ?v= é definido pelo version.json somente após o usuário autorizar. */
-const VERSION = new URL(self.location.href).searchParams.get('v') || '1.0.1';
+const VERSION = new URL(self.location.href).searchParams.get('v') || '1.0.2';
 const CACHE = 'cifrador-static-' + VERSION;
 const CORE = [
   './', './index.html', './app/', './app/index.html', './demo/', './demo/index.html',
-  './cifrador.js', './update.js', './landing.js', './tailwind.css', './catalogo.json',
+  './cifrador.js', './demo-mode.js', './demo-data.json', './update.js', './landing.js', './tailwind.css', './catalogo.json',
   './manifest.json', './version.json', './version-history.json',
   './icon-192.png', './icon-512.png', './icon-maskable-512.png', './logo.png',
   './pdf_min.js', './pdf_worker_min.js',
