@@ -33,13 +33,13 @@
     store.setItem('cantos_user_v2', JSON.stringify(user));
     store.setItem('cifrador-demo-initialized','1');
   };
-  const addBanner = () => {
-    if (document.getElementById('demoModeBanner')) return;
-    const style=document.createElement('style');
-    style.textContent='#demoModeBanner{position:sticky;top:0;z-index:10000;display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;padding:8px 12px;background:#302b59;color:#f5f2ff;border-bottom:1px solid #7167c9;font:600 13px system-ui}#demoModeBanner a{color:#fff;text-decoration:underline}';
-    document.head.appendChild(style);
-    const bar=document.createElement('div');bar.id='demoModeBanner';bar.innerHTML='<span>Você está experimentando o Cifrador · Modo demonstração</span><a href="../">Voltar à apresentação</a>';
-    document.body.prepend(bar);
-  };
+//  const addBanner = () => {
+//  if (document.getElementById('demoModeBanner')) return;
+//    const style=document.createElement('style');
+//    style.textContent='#demoModeBanner{position:sticky;top:0;z-index:10000;display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;padding:8px 12px;background:#302b59;color:#f5f2ff;border-bottom:1px solid #7167c9;font:600 13px system-ui}#demoModeBanner a{color:#fff;text-decoration:underline}';
+//    document.head.appendChild(style);
+//    const bar=document.createElement('div');bar.id='demoModeBanner';bar.innerHTML='<span>Você está experimentando o Cifrador · Modo demonstração</span><a href="../">Voltar à apresentação</a>';
+//    document.body.prepend(bar);
+//  };
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',addBanner,{once:true}); else addBanner();
 })();
