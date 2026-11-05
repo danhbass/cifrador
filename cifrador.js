@@ -66,7 +66,41 @@ function download(name, text, type = 'application/json') {
 const UKEY = 'cantos_user_v2', OLD_DB = 'cantos_db_v1', OLD_LISTS = 'cantos_lists_v1', TKEY = 'cantos_theme';
 let CAT = [], catById = new Map(), catNext = 1, catOk = false;
 let U, songs = [], byId = new Map(), persistAsked = false, migInfo = null;
-const emptyUser = () => ({ v: 2, lists: [], mine: [], hidden: [], edits: {}, tr: {}, tags: [], st: {}, rs: {} });
+const emptyUser = () => ({ v: 2, lists: [], mine: [], hidden: [], edits: {}, tr: {}, tags: [], st: {}, rs: {}, lk: {} });
+/* ============ Links para ouvir (Spotify, YouTube…) ============
+   Logotipos: Simple Icons (CC0). As marcas pertencem aos respectivos proprietários. */
+const LINKMAX = 3, LINKLEN = 500;
+const PLAT = {"spotify":{"n":"Spotify","c":"#1ED760","d":"M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"},"youtube":{"n":"YouTube","c":"#FF0000","d":"M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"},"youtubemusic":{"n":"YouTube Music","c":"#FF0000","d":"M12 0C5.376 0 0 5.376 0 12s5.376 12 12 12 12-5.376 12-12S18.624 0 12 0zm0 19.104c-3.924 0-7.104-3.18-7.104-7.104S8.076 4.896 12 4.896s7.104 3.18 7.104 7.104-3.18 7.104-7.104 7.104zm0-13.332c-3.432 0-6.228 2.796-6.228 6.228S8.568 18.228 12 18.228s6.228-2.796 6.228-6.228S15.432 5.772 12 5.772zM9.684 15.54V8.46L15.816 12l-6.132 3.54z"},"deezer":{"n":"Deezer","c":"#A238FF","d":"M.693 10.024c.381 0 .693-1.256.693-2.807 0-1.55-.312-2.807-.693-2.807C.312 4.41 0 5.666 0 7.217s.312 2.808.693 2.808ZM21.038 1.56c-.364 0-.684.805-.91 2.096C19.765 1.446 19.184 0 18.526 0c-.78 0-1.464 2.036-1.784 5-.312-2.158-.788-3.536-1.325-3.536-.745 0-1.386 2.704-1.62 6.472-.442-1.932-1.083-3.145-1.793-3.145s-1.35 1.213-1.793 3.145c-.242-3.76-.874-6.463-1.628-6.463-.537 0-1.013 1.378-1.325 3.535C6.938 2.036 6.262 0 5.474 0c-.658 0-1.247 1.447-1.602 3.665-.217-1.291-.546-2.105-.91-2.105-.675 0-1.221 2.807-1.221 6.272 0 3.466.546 6.273 1.221 6.273.277 0 .537-.476.736-1.273.32 2.928.996 4.938 1.776 4.938.606 0 1.143-1.204 1.507-3.11.251 3.622.875 6.195 1.602 6.195.46 0 .875-1.023 1.187-2.677C10.142 21.6 11 24 12.004 24c1.005 0 1.863-2.4 2.235-5.822.312 1.654.727 2.677 1.186 2.677.728 0 1.352-2.573 1.603-6.195.364 1.906.9 3.11 1.507 3.11.78 0 1.455-2.01 1.775-4.938.208.797.46 1.273.737 1.273.675 0 1.22-2.807 1.22-6.273-.008-3.457-.553-6.272-1.23-6.272ZM23.307 10.024c.381 0 .693-1.256.693-2.807 0-1.55-.312-2.807-.693-2.807-.381 0-.693 1.256-.693 2.807s.312 2.808.693 2.808Z"},"applemusic":{"n":"Apple Music","c":"#FA243C","d":"M23.994 6.124a9.23 9.23 0 00-.24-2.19c-.317-1.31-1.062-2.31-2.18-3.043a5.022 5.022 0 00-1.877-.726 10.496 10.496 0 00-1.564-.15c-.04-.003-.083-.01-.124-.013H5.986c-.152.01-.303.017-.455.026-.747.043-1.49.123-2.193.4-1.336.53-2.3 1.452-2.865 2.78-.192.448-.292.925-.363 1.408-.056.392-.088.785-.1 1.18 0 .032-.007.062-.01.093v12.223c.01.14.017.283.027.424.05.815.154 1.624.497 2.373.65 1.42 1.738 2.353 3.234 2.801.42.127.856.187 1.293.228.555.053 1.11.06 1.667.06h11.03a12.5 12.5 0 001.57-.1c.822-.106 1.596-.35 2.295-.81a5.046 5.046 0 001.88-2.207c.186-.42.293-.87.37-1.324.113-.675.138-1.358.137-2.04-.002-3.8 0-7.595-.003-11.393zm-6.423 3.99v5.712c0 .417-.058.827-.244 1.206-.29.59-.76.962-1.388 1.14-.35.1-.706.157-1.07.173-.95.045-1.773-.6-1.943-1.536a1.88 1.88 0 011.038-2.022c.323-.16.67-.25 1.018-.324.378-.082.758-.153 1.134-.24.274-.063.457-.23.51-.516a.904.904 0 00.02-.193c0-1.815 0-3.63-.002-5.443a.725.725 0 00-.026-.185c-.04-.15-.15-.243-.304-.234-.16.01-.318.035-.475.066-.76.15-1.52.303-2.28.456l-2.325.47-1.374.278c-.016.003-.032.01-.048.013-.277.077-.377.203-.39.49-.002.042 0 .086 0 .13-.002 2.602 0 5.204-.003 7.805 0 .42-.047.836-.215 1.227-.278.64-.77 1.04-1.434 1.233-.35.1-.71.16-1.075.172-.96.036-1.755-.6-1.92-1.544-.14-.812.23-1.685 1.154-2.075.357-.15.73-.232 1.108-.31.287-.06.575-.116.86-.177.383-.083.583-.323.6-.714v-.15c0-2.96 0-5.922.002-8.882 0-.123.013-.25.042-.37.07-.285.273-.448.546-.518.255-.066.515-.112.774-.165.733-.15 1.466-.296 2.2-.444l2.27-.46c.67-.134 1.34-.27 2.01-.403.22-.043.442-.088.663-.106.31-.025.523.17.554.482.008.073.012.148.012.223.002 1.91.002 3.822 0 5.732z"},"soundcloud":{"n":"SoundCloud","c":"#FF5500","d":"M23.999 14.165c-.052 1.796-1.612 3.169-3.4 3.169h-8.18a.68.68 0 0 1-.675-.683V7.862a.747.747 0 0 1 .452-.724s.75-.513 2.333-.513a5.364 5.364 0 0 1 2.763.755 5.433 5.433 0 0 1 2.57 3.54c.282-.08.574-.121.868-.12.884 0 1.73.358 2.347.992s.948 1.49.922 2.373ZM10.721 8.421c.247 2.98.427 5.697 0 8.672a.264.264 0 0 1-.53 0c-.395-2.946-.22-5.718 0-8.672a.264.264 0 0 1 .53 0ZM9.072 9.448c.285 2.659.37 4.986-.006 7.655a.277.277 0 0 1-.55 0c-.331-2.63-.256-5.02 0-7.655a.277.277 0 0 1 .556 0Zm-1.663-.257c.27 2.726.39 5.171 0 7.904a.266.266 0 0 1-.532 0c-.38-2.69-.257-5.21 0-7.904a.266.266 0 0 1 .532 0Zm-1.647.77a26.108 26.108 0 0 1-.008 7.147.272.272 0 0 1-.542 0 27.955 27.955 0 0 1 0-7.147.275.275 0 0 1 .55 0Zm-1.67 1.769c.421 1.865.228 3.5-.029 5.388a.257.257 0 0 1-.514 0c-.21-1.858-.398-3.549 0-5.389a.272.272 0 0 1 .543 0Zm-1.655-.273c.388 1.897.26 3.508-.01 5.412-.026.28-.514.283-.54 0-.244-1.878-.347-3.54-.01-5.412a.283.283 0 0 1 .56 0Zm-1.668.911c.4 1.268.257 2.292-.026 3.572a.257.257 0 0 1-.514 0c-.241-1.262-.354-2.312-.023-3.572a.283.283 0 0 1 .563 0Z"},"tidal":{"n":"Tidal","c":"#000000","d":"M12.012 3.992L8.008 7.996 4.004 3.992 0 7.996 4.004 12l4.004-4.004L12.012 12l-4.004 4.004 4.004 4.004 4.004-4.004L12.012 12l4.004-4.004-4.004-4.004zM16.042 7.996l3.979-3.979L24 7.996l-3.979 3.979z"}};
+const PLAT_HOSTS = [
+  ['youtubemusic', h => h === 'music.youtube.com'],
+  ['youtube', h => h === 'youtu.be' || h === 'youtube.com' || h.endsWith('.youtube.com')],
+  ['spotify', h => h === 'spotify.com' || h.endsWith('.spotify.com') || h === 'spotify.link'],
+  ['deezer', h => h === 'deezer.com' || h.endsWith('.deezer.com') || h === 'deezer.page.link' || h === 'dzr.page.link'],
+  ['applemusic', h => h === 'music.apple.com' || h === 'itunes.apple.com'],
+  ['soundcloud', h => h === 'soundcloud.com' || h.endsWith('.soundcloud.com')],
+  ['tidal', h => h === 'tidal.com' || h.endsWith('.tidal.com')]
+];
+function normLink(raw) { // devolve o link https limpo, '' se vazio, ou null se for inválido
+  let s = String(raw == null ? '' : raw).trim(); if (!s) return '';
+  if (s.length > LINKLEN) return null;
+  if (!/^[a-z][a-z0-9+.-]*:/i.test(s)) s = 'https://' + s.replace(/^\/+/, ''); // colou "open.spotify.com/…" sem o https
+  let u; try { u = new URL(s); } catch (_) { return null; }
+  if (u.protocol !== 'https:' || u.username || u.password || !u.hostname.includes('.')) return null;
+  return u.href.length <= LINKLEN ? u.href : null;
+}
+function platOf(url) {
+  let h = ''; try { h = new URL(url).hostname.toLowerCase().replace(/^www\./, ''); } catch (_) {}
+  const k = (PLAT_HOSTS.find(([, f]) => f(h)) || [])[0];
+  return k ? { k, ...PLAT[k] } : { k: 'link', n: h || 'Link', c: '#475569', d: '' };
+}
+const LINK_GLYPH = '<g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.5 13.5a3 3 0 0 0 4.2 0l2.3-2.3a3 3 0 0 0-4.2-4.2l-.8.8"/><path d="M13.5 10.5a3 3 0 0 0-4.2 0L7 12.8a3 3 0 0 0 4.2 4.2l.8-.8"/></g>';
+const platIcon = (p, size = 24) => '<svg class="pi" data-k="' + p.k + '" width="' + size + '" height="' + size + '" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' + (p.d ? '<path fill="' + p.c + '" d="' + p.d + '"/>' : '<g style="color:' + p.c + '">' + LINK_GLYPH + '</g>') + '</svg>';
+const linkLabel = p => p.k === 'link' ? 'Abrir link (' + p.n + ')' : 'Ouvir no ' + p.n;
+const linksOf = id => (U.lk && Array.isArray(U.lk[id]) ? U.lk[id] : []);
+const linkAnchors = (id, size) => linksOf(id).map(u => { const p = platOf(u), t = linkLabel(p); return '<a href="' + esc(u) + '" target="_blank" rel="noopener noreferrer" title="' + esc(t) + '" aria-label="' + esc(t) + '">' + platIcon(p, size) + '</a>'; }).join('');
+const cleanLinks = a => [...new Set((Array.isArray(a) ? a : []).map(x => (typeof x === 'string' ? normLink(x) : null)).filter(Boolean))].slice(0, LINKMAX);
+function setLinks(id, a) { const l = cleanLinks(a); if (l.length) U.lk[id] = l; else delete U.lk[id]; }
+
 const SAFE_ID = /^[A-Za-z0-9_.-]{1,64}$/, BAD_KEY = new Set(['__proto__', 'constructor', 'prototype']);
 const okId = x => typeof x === 'string' && SAFE_ID.test(x) && !BAD_KEY.has(x);
 const LIM = { imp: 8000, songs: 20000, content: 300000, title: 200, lists: 300, items: 8000, tags: 200, img: 2000000 };
@@ -103,6 +137,7 @@ function cleanUser(r) { // valida TUDO o que vem do armazenamento ou de um arqui
     u.edits[k] = { title: typeof e.title === 'string' ? e.title.slice(0, LIM.title) : undefined, content, chordLines: Array.isArray(e.chordLines) ? marks(e.chordLines, content == null ? 20000 : nl(content)) : undefined, b: String(e.b || '').slice(0, 64) };
   }
   for (const [k, v] of ent(r.tr)) if (okId(k) && Number.isInteger(v) && v && v >= -24 && v <= 24) u.tr[k] = v;
+  for (const [k, v] of ent(r.lk).slice(0, LIM.songs)) { if (!okId(k) || !Array.isArray(v)) { bad(); continue; } const a = cleanLinks(v); if (a.length) u.lk[k] = a; }
   return u;
 }
 function save() {
@@ -185,7 +220,7 @@ function reconcile() {
   U.mine = U.mine.filter(m => {
     const cid = !m.img && exact.get(key(m.title, m.content)); if (!cid) return true;
     U.lists.forEach(l => { if (l.items.includes(m.id)) { l.items = [...new Set(l.items.map(x => (x === m.id ? cid : x)))]; } });
-    if (U.tr[m.id] && !U.tr[cid]) U.tr[cid] = U.tr[m.id]; delete U.tr[m.id]; ch = true; return false;
+    if (U.tr[m.id] && !U.tr[cid]) U.tr[cid] = U.tr[m.id]; delete U.tr[m.id]; if (U.lk[m.id] && !U.lk[cid]) U.lk[cid] = U.lk[m.id]; delete U.lk[m.id]; ch = true; return false;
   });
   for (const [id, e] of Object.entries(U.edits)) {
     const c = catById.get(id);
@@ -338,7 +373,7 @@ function getVisible() { // cifras na ordem exibida (também usada por Anterior/P
 }
 const repActs = l => (l.recv ? [['save', '⬇', 'Salvar no meu catálogo']] : [['add', '＋', 'Adicionar músicas']]).concat([['ren', '✎', 'Renomear'], ['share', '🔗', 'Enviar'], ['del', '🗑', 'Excluir']]);
 function repHeadHtml(l, n) { // mesmas opções do ⋯ da lista de repertórios no menu lateral
-  return '<div class="dRep repHead" data-head="' + esc(l.id) + '"><span class="repTitle">' + (l.recv ? '📥 ' : '📁 ') + esc(l.name) + ' <small>(' + n + ')</small></span>' +
+  return '<div class="dRep repHead" data-head="' + esc(l.id) + '"><button type="button" class="btn repBack" data-hback aria-label="Voltar para a página inicial" title="Voltar para a página inicial">← Início</button><span class="repTitle">' + (l.recv ? '📥 ' : '📁 ') + esc(l.name) + ' <small>(' + n + ')</small></span>' +
     '<button type="button" class="dMore" data-hmore aria-label="Opções do repertório" title="Opções do repertório" aria-expanded="false">⋯</button><div class="dActs">' +
     repActs(l).map(([a, ic, t]) => '<button class="dIco" data-ra="' + a + '" data-id="' + esc(l.id) + '" title="' + esc(t) + '" aria-label="' + esc(t) + '">' + ic + '</button>').join('') + '</div></div>';
 }
@@ -360,21 +395,22 @@ function renderList() {
       const l = s.content.split('\n').find(l => norm(l).includes(q) && !isChordLine(l));
       if (l) sn = '<div class="text-sm opacity-70 truncate font-normal">' + esc(l.trim()) + '</div>';
     }
+    const lk = linkAnchors(s.id, 22);
     const tag = tagChips(s.id) + (!s.cat ? '<span class="text-xs opacity-60 ml-2 font-normal">minha</span>' : (s.edited ? '<span class="text-xs opacity-60 ml-2 font-normal">✎ editada</span>' : ''));
     return '<li class="flex items-stretch gap-2 rowli">' +
       (inc ? '<button type="button" class="btn drag shrink-0" aria-label="Arrastar cifra" title="Arrastar para ordenar">☰</button>' : '') +
-      '<button data-open="' + esc(s.id) + '" class="btn flex-1 !justify-start text-left py-3 min-h-[56px]"><div class="min-w-0 w-full"><div class="truncate">' + (inc ? '<span class="opacity-60 mr-2">' + (n + 1) + '.</span>' : '') + esc(s.title) + tag + '</div>' + sn + '</div></button>' +
+      '<button data-open="' + esc(s.id) + '" class="btn flex-1 !justify-start text-left py-3 min-h-[56px]"><div class="min-w-0 w-full"><div class="truncate">' + (inc ? '<span class="opacity-60 mr-2">' + (n + 1) + '.</span>' : '') + esc(s.title) + tag + '</div>' + sn + '</div></button>' + (lk ? '<span class="rowlinks">' + lk + '</span>' : '') +
       '<button data-more class="btn rowmore" aria-label="Mais ações" title="Mais ações">⋯</button><div class="rowacts"><button data-fav="' + esc(s.id) + '" class="btn" aria-label="Listas">' + (inLists(s.id) ? '★' : '☆') + '</button>' +
       '<button data-tagbtn="' + esc(s.id) + '" class="btn" aria-label="Tags" title="Tags">🏷</button>' + '<button data-copy-row="' + esc(s.id) + '" class="btn" aria-label="Copiar cifra" title="Copiar cifra">📋</button>' + '<button data-pdf-row="' + esc(s.id) + '" class="btn" aria-label="Exportar PDF" title="Exportar PDF">📄</button>' + '<button data-edit="' + esc(s.id) + '" class="btn" aria-label="Editar">✎</button>' +
       '<button data-del="' + esc(s.id) + '" class="btn" aria-label="Excluir">🗑</button></div></li>';
   }).join('') : (catOk || songs.length ? (songs.length ? '<li class="text-center opacity-60 py-12">Nenhuma música aqui.</li>' : '<li class="text-center py-12"><button type="button" data-empty-import class="opacity-70 hover:opacity-100 underline underline-offset-4 cursor-pointer">Clique aqui para incluir sua primeira cifra.</button></li>') : '<li class="text-center opacity-60 py-12">Não consegui carregar o catálogo. Verifique a internet e recarregue a página. Você ainda pode usar Importar e + Adicionar.</li>');  renderDrawer();
 }
 async function deleteSong(s) {
-  if (s.ro) { if (!await ask('Remover "' + s.title + '" deste repertório recebido?', 'Remover')) return false; U.lists.forEach(l => removeFromList(s.id, l.id)); delete U.rs[s.id]; delete U.tr[s.id]; save(); refresh(); toast('Música removida.'); return true; }
+  if (s.ro) { if (!await ask('Remover "' + s.title + '" deste repertório recebido?', 'Remover')) return false; U.lists.forEach(l => removeFromList(s.id, l.id)); delete U.rs[s.id]; delete U.tr[s.id]; delete U.lk[s.id]; save(); refresh(); toast('Música removida.'); return true; }
   const msg = s.cat ? 'Excluir "' + s.title + '"?\n\nA cifra some só para você e pode ser restaurada em “Meus dados”.' : 'Excluir "' + s.title + '"?\n\nEsta cifra é sua e será apagada de vez.';
   if (!await ask(msg, 'Excluir')) return false;
   if (s.cat) { if (!U.hidden.includes(s.id)) U.hidden.push(s.id); } // as listas continuam com o ID: se restaurar, a cifra volta às listas
-  else { U.mine = U.mine.filter(m => m.id !== s.id); U.lists.forEach(l => removeFromList(s.id, l.id)); delete U.tr[s.id]; }
+  else { U.mine = U.mine.filter(m => m.id !== s.id); U.lists.forEach(l => removeFromList(s.id, l.id)); delete U.tr[s.id]; delete U.lk[s.id]; }
   save(); refresh(); toast('Música excluída.'); return true;
 }
 $('#list').addEventListener('click', async e => {
@@ -396,6 +432,7 @@ $('#list').addEventListener('click', async e => {
 });
 $('#search').addEventListener('input', e => { st.q = e.target.value; renderList(); });
 $('#chips').onclick = e => {
+  if (e.target.closest('[data-hback]')) { goHome(); return; }
   const m = e.target.closest('[data-hmore]'); if (m) { const row = m.closest('.dRep'); row.classList.toggle('menu-open'); m.setAttribute('aria-expanded', row.classList.contains('menu-open')); return; }
   const a = e.target.closest('[data-ra]'); if (a) repAction(a);
 };
@@ -408,7 +445,7 @@ $('#lstRen').onclick = async () => {
 $('#lstDel').onclick = async () => {
   const l = listById(st.list); if (!l || l.id === 'fav') return;
   if (!await ask('Excluir a lista "' + l.name + '"?\n\nAs músicas continuam no livro, só saem desta lista.', 'Excluir')) return;
-  if (l.recv) l.items.forEach(id => { delete U.rs[id]; delete U.tr[id]; });
+  if (l.recv) l.items.forEach(id => { delete U.rs[id]; delete U.tr[id]; delete U.lk[id]; });
   U.lists = U.lists.filter(x => x.id !== l.id); save(); refresh(); st.list = 'all'; renderList(); toast('Repertório excluído.');
 };
 
@@ -455,6 +492,7 @@ function renderSong() {
   const s = st.cur; if (!s) return;
   const out = transposeText(s.content, st.tr, s.chordLines || []);
   $('#vTitle').textContent = s.title;
+  { const h = linkAnchors(s.id, 30), fab = $('#listenFab'); fab.innerHTML = h; fab.classList.toggle('hidden', !h); }
   $('#vFav').textContent = inLists(s.id) ? '★' : '☆';
   const hasTxt = !!s.content.trim();
   ['#song', '#ctlTr', '#vChords'].forEach(i => $(i).classList.toggle('hidden', !hasTxt));
@@ -565,11 +603,28 @@ $('#mText').addEventListener('input', e => { const t = e.target; if (t.dataset.p
 $('#mText').addEventListener('scroll', () => { const pre = $('#mHighlight'); pre.scrollTop = $('#mText').scrollTop; pre.scrollLeft = $('#mText').scrollLeft; });
 
 let modalBaseline = '';
-function modalState() { return JSON.stringify({ title: $('#mTitle').value, text: $('#mText').value, marks: st.chordLines, tags: st.edTags || [] }); }
+function modalState() { return JSON.stringify({ title: $('#mTitle').value, text: $('#mText').value, marks: st.chordLines, tags: st.edTags || [], links: st.edLinks || [] }); }
+function updLinkChip(row) {
+  const t = row.querySelector('[data-lin]').value.trim(), c = row.querySelector('[data-chip]'), n = t ? normLink(t) : '';
+  if (!t) { c.className = 'mlchip'; c.textContent = 'Link'; }
+  else if (n === null) { c.className = 'mlchip bad'; c.textContent = 'Link inválido'; }
+  else { const p = platOf(n); c.className = 'mlchip'; c.innerHTML = platIcon(p, 18) + esc(p.n); }
+}
+function renderEdLinks() {
+  const n = st.edLinks.length;
+  $('#mLinks').innerHTML = st.edLinks.map((u, i) => '<div class="mlrow" data-i="' + i + '"><div class="mlhead"><span class="mlchip" data-chip></span><button type="button" class="btn mlx" data-ldel="' + i + '" aria-label="Remover link" title="Remover link">×</button></div><input type="url" class="fld" data-lin inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Cole aqui o link da música" aria-label="Endereço do link ' + (i + 1) + '" value="' + esc(u) + '"></div>').join('');
+  $('#mLinks').querySelectorAll('.mlrow').forEach(updLinkChip);
+  $('#mLinkAdd').classList.toggle('hidden', n >= LINKMAX); $('#mLinksCount').textContent = n ? n + ' de ' + LINKMAX : '';
+}
+const syncEdLinks = () => { st.edLinks = [...$('#mLinks').querySelectorAll('[data-lin]')].map(i => i.value); }; // a tela é a fonte da verdade
+$('#mLinkAdd').onclick = () => { syncEdLinks(); if (st.edLinks.length >= LINKMAX) return; st.edLinks.push(''); renderEdLinks(); const l = $('#mLinks').querySelectorAll('[data-lin]'); l[l.length - 1].focus(); };
+$('#mLinks').addEventListener('input', e => { const r = e.target.closest('.mlrow'); if (!r || !e.target.isConnected || !e.target.matches('[data-lin]')) return; syncEdLinks(); updLinkChip(r); });
+$('#mLinks').addEventListener('change', e => { const r = e.target.closest('.mlrow'); if (!r || !e.target.isConnected || !e.target.matches('[data-lin]')) return; const n = normLink(e.target.value); if (n) { e.target.value = n; syncEdLinks(); updLinkChip(r); } }); // mostra o endereço completo com https
+$('#mLinks').addEventListener('click', e => { const d = e.target.closest('[data-ldel]'); if (!d) return; syncEdLinks(); st.edLinks.splice(Number(d.dataset.ldel), 1); renderEdLinks(); });
 function openModal(song) {
   if (song && song.ro) return toast('Música recebida: use “Salvar no meu catálogo” para poder editar.');
-  st.edit = song ? song.id : null; st.edTags = song ? [...(U.st[song.id] || [])] : [];
-  $('#mHead').textContent = song ? (song.cat ? 'Editar cifra (só para você)' : 'Editar música') : 'Adicionar música';
+  st.edit = song ? song.id : null; st.edTags = song ? [...(U.st[song.id] || [])] : []; st.edLinks = song ? [...linksOf(song.id)] : []; renderEdLinks();
+  $('#mHead').textContent = song ? (song.cat ? 'Editar cifra (só para você)' : 'Editar cifra') : 'Nova cifra';
   $('#mTitle').value = song ? song.title : '';
   $('#mText').value = song ? song.content : '';
   st.chordLines = song && Array.isArray(song.chordLines) ? [...song.chordLines] : [];
@@ -585,10 +640,11 @@ async function closeModal(force = false) {
     const choice = await ask('Existem alterações que ainda não foram salvas. Deseja descartá-las?', 'Descartar alterações', 'Continuar editando');
     if (!choice) return false;
   }
-  $('#modal').classList.add('hidden'); st.edit = null; st.chordLines = []; modalBaseline = ''; return true;
+  $('#modal').classList.add('hidden'); st.edit = null; st.chordLines = []; st.edLinks = []; modalBaseline = ''; return true;
 }
 // A adição manual também está disponível no modal acionado pelo botão principal.
 $('#mCancel').onclick = () => closeModal();
+$('#mX').onclick = () => closeModal();
 $('#btnCreateRep').onclick = async () => { const name = await ask('Nome do novo repertório:', 'Criar', 'Cancelar', 'Meu repertório'); if (!name) return; const clean = name.slice(0,40); if (U.lists.some(l => l.name.toLowerCase() === clean.toLowerCase())) return toast('Já existe um repertório com esse nome.'); const l = { id: uid(), name: clean, sort: 'custom', order: [], items: [] }; U.lists.push(l); save(); st.list = l.id; renderList(); toast('Repertório criado. Adicione cifras pelo botão ☆ em cada música.'); };
 $('#mChooseFile').onclick = async () => { if (await closeModal()) $('#file').click(); };
 $('#mMarkChord').onclick = () => {
@@ -612,15 +668,17 @@ $('#modal').addEventListener('click', e => { if (e.target.id === 'modal') closeM
 $('#mSave').onclick = () => {
   const title = $('#mTitle').value.trim() || 'Sem título', content = $('#mText').value.replace(/\r/g, '');
   if (!content.trim()) return toast('Digite ou cole o texto da cifra antes de salvar.');
+  const links = []; // confere os links antes de gravar qualquer coisa
+  for (const inp of $('#mLinks').querySelectorAll('[data-lin]')) { const t = inp.value.trim(); if (!t) continue; const n = normLink(t); if (n === null) { inp.focus(); return toast('Confira o link: use um endereço que comece com https.'); } if (!links.includes(n)) links.push(n); }
   const edit = st.edit && byId.get(st.edit), bak = JSON.stringify(U);
   if (edit && st.edTone) { delete U.tr[edit.id]; st.tr = 0; }
-  if (edit) { if (st.edTags.length) U.st[edit.id] = [...st.edTags]; else delete U.st[edit.id]; }
+  if (edit) { if (st.edTags.length) U.st[edit.id] = [...st.edTags]; else delete U.st[edit.id]; setLinks(edit.id, links); }
   if (edit && edit.cat) { // correção pessoal de uma cifra do catálogo: guarda só a diferença
     const c = catById.get(edit.id);
     if (title === c.title && content === c.content && !st.chordLines.length) delete U.edits[edit.id];
     else U.edits[edit.id] = { title: title !== c.title ? title : undefined, content: content !== c.content ? content : undefined, chordLines: st.chordLines.length ? [...st.chordLines] : undefined, b: hash(c.content) };
   } else if (edit) { Object.assign(U.mine.find(x => x.id === edit.id), { title, content, chordLines: [...st.chordLines] }); }
-  else { const id = 'u-' + uid(); if (st.edTags.length) U.st[id] = [...st.edTags]; U.mine.push({ id, title, content, chordLines: [...st.chordLines] }); if (st.list !== 'all') addToList(id, st.list); }
+  else { const id = 'u-' + uid(); if (st.edTags.length) U.st[id] = [...st.edTags]; U.mine.push({ id, title, content, chordLines: [...st.chordLines] }); setLinks(id, links); if (st.list !== 'all') addToList(id, st.list); }
   if (!save()) { U = cleanUser(JSON.parse(bak)); return; }
   closeModal(true); refresh(); renderList(); if (st.cur) renderSong(); toast('Música salva.');
 };
@@ -901,6 +959,7 @@ async function importFiles(files, customMode = false) {
   else if (total || dup) toast(total + ' música(s) importada(s)' + (dup ? '; ' + dup + ' já existiam.' : '.'));
 }
 $('#btnAdd').onclick = () => openModal(null);
+$('#btnAddTop').onclick = () => openModal(null);
 $('#file').onchange = async e => {
   const fl = [...e.target.files]; e.target.value = ''; if (!fl.length) return;
   let needsChoice = true;
@@ -945,7 +1004,7 @@ function listPayload(L) { // leva texto, marcações, tom e tags exatamente como
   for (const id of L.items) {
     const s = byId.get(id); if (!s) continue; if (!s.content.trim()) { skipped++; continue; }
     const g = s.ro ? (s.rtags || []) : tagsOf(id).map(t => t.name);
-    arr.push({ t: s.title, x: s.content, c: s.chordLines && s.chordLines.length ? s.chordLines : undefined, r: U.tr[id] || undefined, g: g.length ? g : undefined });
+    arr.push({ t: s.title, x: s.content, c: s.chordLines && s.chordLines.length ? s.chordLines : undefined, r: U.tr[id] || undefined, g: g.length ? g : undefined, k: linksOf(id).length ? linksOf(id) : undefined });
   }
   return { obj: { k: 'lista', v: 2, n: L.name, s: L.sort, songs: arr }, skipped };
 }
@@ -1007,12 +1066,12 @@ async function importV2(o) {
   const base = String(o.n || 'Repertório recebido').slice(0, 40), ex = U.lists.find(l => l.recv && l.name === base);
   if (!await ask((ex ? 'Atualizar o repertório recebido “' : 'Receber o repertório “') + base + '” com ' + sg.length + ' música(s)?\n\nO seu catálogo não é alterado: o repertório fica numa área separada.', ex ? 'Atualizar' : 'Receber')) return false;
   let L = ex;
-  if (L) { L.items.forEach(id => { delete U.rs[id]; delete U.tr[id]; }); L.items = []; }
+  if (L) { L.items.forEach(id => { delete U.rs[id]; delete U.tr[id]; delete U.lk[id]; }); L.items = []; }
   else { let name = base, k = 2; while (U.lists.some(l => l.name.toLowerCase() === name.toLowerCase())) name = base.slice(0, 34) + ' (' + k++ + ')'; L = { id: uid(), name, sort: o.s === 'added' ? 'added' : 'name', items: [], recv: true }; U.lists.push(L); }
   for (const x of sg) {
     const id = 'r-' + uid();
     U.rs[id] = { title: x.t.slice(0, 200), content: x.x, chordLines: Array.isArray(x.c) ? x.c.filter(Number.isInteger) : [], rtags: Array.isArray(x.g) ? x.g.filter(s => typeof s === 'string').map(s => s.slice(0, 20)).slice(0, 10) : [] };
-    if (Number.isInteger(x.r) && x.r) U.tr[id] = x.r; L.items.push(id);
+    if (Number.isInteger(x.r) && x.r) U.tr[id] = x.r; setLinks(id, x.k); L.items.push(id);
   }
   save(); refresh(); st.list = L.id; renderList(); toast('Repertório “' + L.name + '” recebido: ' + sg.length + ' música(s).'); return true;
 }
@@ -1023,6 +1082,7 @@ function saveRecvToMine(L) {
     const r = addMineOne({ title: s.title, content: s.content }); n++;
     if (r.isNew) { const m = U.mine.find(x => x.id === r.id); if (m) m.chordLines = [...s.chordLines]; }
     if (U.tr[id] && !U.tr[r.id]) U.tr[r.id] = U.tr[id];
+    if (linksOf(id).length && !linksOf(r.id).length) setLinks(r.id, linksOf(id));
     const ids = new Set(U.st[r.id] || []);
     for (const nm of s.rtags) { let t = U.tags.find(x => x.name.toLowerCase() === nm.toLowerCase()); if (!t) { t = { id: uid(), name: nm }; U.tags.push(t); } ids.add(t.id); }
     if (ids.size) U.st[r.id] = [...ids];
@@ -1096,7 +1156,7 @@ const dateStr = () => new Date().toISOString().slice(0, 10);
 $('#dCatBackup').onclick = () => {
   const ok = new Set(), arr = []; let img = 0;
   for (const s of songs) { if (!s.content.trim()) { img++; continue; } ok.add(s.id); const g = tagsOf(s.id).map(t => t.name);
-    arr.push({ id: s.id, title: s.title, content: s.content, chordLines: s.chordLines && s.chordLines.length ? s.chordLines : undefined, tr: U.tr[s.id] || undefined, tags: g.length ? g : undefined }); }
+    arr.push({ id: s.id, title: s.title, content: s.content, chordLines: s.chordLines && s.chordLines.length ? s.chordLines : undefined, tr: U.tr[s.id] || undefined, tags: g.length ? g : undefined, lk: linksOf(s.id).length ? linksOf(s.id) : undefined }); }
   const lists = U.lists.filter(l => !l.recv).map(l => ({ name: l.name, sort: l.sort, items: l.items.filter(id => ok.has(id)) }));
   download('catalogo-' + dateStr() + '.json', JSON.stringify({ app: 'cifrador', v: 3, exportedAt: new Date().toISOString(), next: catNext, songs: arr, lists, lib: JSON.parse(JSON.stringify(U)) }));
   toast('Backup com ' + arr.length + ' cifra(s) e ' + lists.length + ' repertório(s)' + (img ? ' (' + img + ' em imagem ficaram de fora)' : '') + '.');
@@ -1107,7 +1167,7 @@ $('#dCatDel').onclick = async () => {
   if (!await ask('Excluir TODAS as ' + n + ' cifras?\n\nSão removidas todas as cifras (do catálogo, suas e recebidas), com o tom salvo e as tags aplicadas a elas. Seus repertórios continuam, mas vazios, e as tags criadas continuam disponíveis.\n\nUm backup será baixado antes, por segurança.', 'Continuar', 'Cancelar')) return;
   if (!await ask('Última confirmação: esta ação não pode ser desfeita. Excluir tudo agora?', 'Excluir tudo', 'Cancelar')) return;
   try { $('#dCatBackup').onclick(); } catch (_) {}
-  U.mine = []; U.edits = {}; U.hidden = CAT.map(c => c.id); U.tr = {}; U.st = {}; U.rs = {};
+  U.mine = []; U.edits = {}; U.hidden = CAT.map(c => c.id); U.tr = {}; U.st = {}; U.lk = {}; U.rs = {};
   U.lists = U.lists.filter(l => !l.recv); U.lists.forEach(l => { l.items = []; l.order = []; });
   if (!save()) return;
   st.list = 'all'; st.tag = null; refresh(); renderList(); $('#data').classList.add('hidden'); toast(n + ' cifra(s) excluída(s). O backup foi baixado.');
@@ -1118,13 +1178,14 @@ async function importCatalog(d) {
   if (!await ask('Catálogo com ' + sg.length + ' cifra(s)' + (lists.length ? ' e ' + lists.length + ' repertório(s)' : '') + '.\n\nMesclar com o seu catálogo atual? Cifras iguais não duplicam e nada seu é apagado.', 'Mesclar', 'Outras opções')) {
     if (!await ask('Substituir TODO o seu catálogo por este arquivo?' + (d.lib ? '\n\nA biblioteca volta exatamente como estava no backup (cifras, edições, exclusões, tons, tags e repertórios).' : '') + '\n\nSuas cifras, edições e exclusões atuais serão trocadas. Faça um backup antes.', 'Substituir', 'Cancelar')) return;
     if (d.lib && typeof d.lib === 'object') { U = cleanUser(d.lib); const dr = cleanUser.rep.dropped; if (catOk) reconcile(); if (!save()) return; st.list = 'all'; st.tag = null; refresh(); renderList(); return toast('Biblioteca restaurada.' + (dr ? ' ' + dr + ' item(ns) inválido(s) foram ignorados.' : '')); }
-    U.mine = []; U.edits = {}; U.hidden = CAT.map(c => c.id); U.tr = {}; U.st = {}; U.lists = U.lists.filter(l => l.recv);
+    U.mine = []; U.edits = {}; U.hidden = CAT.map(c => c.id); U.tr = {}; U.st = {}; U.lk = {}; U.lists = U.lists.filter(l => l.recv);
   }
   const map = new Map(); let n = 0;
   for (const x of sg) {
     const r = addMineOne({ title: x.title, content: x.content }); if (r.isNew) n++; if (x.id) map.set(x.id, r.id);
     const m = U.mine.find(q => q.id === r.id); if (m && Array.isArray(x.chordLines)) m.chordLines = x.chordLines.filter(Number.isInteger);
     if (Number.isInteger(x.tr) && x.tr) U.tr[r.id] = x.tr;
+    if (!linksOf(r.id).length) setLinks(r.id, x.lk);
     const ids = new Set(U.st[r.id] || []);
     for (const nm of Array.isArray(x.tags) ? x.tags : []) { if (typeof nm !== 'string') continue; let t = U.tags.find(q => q.name.toLowerCase() === nm.toLowerCase()); if (!t) { t = { id: uid(), name: nm.slice(0, 20) }; U.tags.push(t); } ids.add(t.id); }
     if (ids.size) U.st[r.id] = [...ids];
@@ -1291,7 +1352,7 @@ $('#vCopy').onclick = async () => {
     toast('Cifra copiada.');
   } else if (choice === 'dup') {
     const r = addMineOne({ title: s.title + ' (cópia)', content: toneText(s) }), m = U.mine.find(q => q.id === r.id);
-    if (m && s.chordLines) m.chordLines = [...s.chordLines]; if (U.st[s.id]) U.st[r.id] = [...U.st[s.id]];
+    if (m && s.chordLines) m.chordLines = [...s.chordLines]; if (U.st[s.id]) U.st[r.id] = [...U.st[s.id]]; if (linksOf(s.id).length) setLinks(r.id, linksOf(s.id));
     save(); refresh(); renderList(); toast('Cópia criada no seu catálogo.');
   }
 };
@@ -1530,7 +1591,8 @@ let wasWide = wide(); addEventListener('resize', () => { if (wide() !== wasWide)
 $('#btnMenu').onclick = () => setMenu(!menuOpen()); $('#drawerBg').onclick = $('#drawerClose').onclick = () => setMenu(false);
 document.addEventListener('click', e => { if (menuOpen() && !e.target.closest('#drawer, #btnMenu, #help, #keys')) setMenu(false); });
 const closeIfPhone = () => { if (!wide()) setMenu(false); };
-$('#dHome').onclick = () => { st.list = 'all'; st.tag = null; st.q = ''; $('#search').value = ''; renderList(); scrollTo({ top: 0 }); closeIfPhone(); };
+function goHome() { st.list = 'all'; st.tag = null; st.q = ''; $('#search').value = ''; renderList(); scrollTo({ top: 0 }); closeIfPhone(); }
+$('#dHome').onclick = goHome;
 $('#dTags').onclick = () => { closeIfPhone(); $('#btnTags').click(); };
 $('#dMenuAddSong').onclick = () => { closeIfPhone(); $('#dImportSongs').click(); };
 function openHelp() { const m = $('#help'); m.classList.remove('hidden'); $('#helpBody').scrollTop = 0; $('#helpClose').focus({ preventScroll: true }); }
@@ -1552,18 +1614,20 @@ function renderDrawer() {
 
 // Padroniza o fechamento das janelas com um X no canto superior direito.
 (function installModalCloseIcons() {
-  const modalIds = ['modal','cpyDlg','dlg','pick','share','data','tagm','addm','splitm'];
+  const modalIds = ['cpyDlg','dlg','pick','share','data','tagm','addm','splitm']; // o editor (modal) tem cabeçalho próprio
   for (const id of modalIds) {
     const outer = document.getElementById(id); if (!outer) continue;
     const panel = outer.children[0]; if (!panel) continue;
-    panel.style.position = 'relative'; panel.style.paddingTop = '2.8rem';
     const close = [...panel.querySelectorAll('button')].find(b => b.textContent.trim() === 'Fechar');
     if (!close) continue;
+    panel.style.position = 'relative'; panel.style.paddingTop = '0';
     close.classList.add('hidden');
+    const bar = document.createElement('div'); // barra fixa no topo do painel: o ✕ continua visível mesmo com o conteúdo rolado
+    bar.style.cssText = 'position:sticky;top:0;z-index:5;display:flex;justify-content:flex-end;align-items:center;min-height:2.8rem;padding:0 12px;background-color:inherit;margin:0';
     const x = document.createElement('button'); x.type = 'button'; x.className = 'btn';
-    x.textContent = 'X'; x.setAttribute('aria-label','Fechar janela'); x.title = 'Fechar';
-    x.style.cssText = 'position:absolute;right:12px;top:10px;min-width:38px;min-height:36px;font-weight:800;font-size:18px;z-index:2';
-    x.addEventListener('click', () => close.click()); panel.appendChild(x);
+    x.textContent = '✕'; x.setAttribute('aria-label', 'Fechar janela'); x.title = 'Fechar';
+    x.style.cssText = 'min-width:44px;min-height:40px;font-weight:800;font-size:18px';
+    x.addEventListener('click', () => close.click()); bar.appendChild(x); panel.insertBefore(bar, panel.firstChild);
   }
 })();
 

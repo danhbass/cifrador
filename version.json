@@ -1,0 +1,11 @@
+{
+  "version": "1.0.1",
+  "releaseDate": "2026-11-05",
+  "title": "Catálogo de demonstração com repertório e TAGs",
+  "changes": [
+    "Catálogo de demonstração com 10 cifras",
+    "Repertório inicial com 5 cifras editável",
+    "TAGs para classificar e filtrar músicas",
+    "Leitor com ajuste de tamanho e exibição de acordes"
+  ]
+}
